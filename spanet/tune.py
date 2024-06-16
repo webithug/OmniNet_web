@@ -13,14 +13,15 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 
 from spanet import JetReconstructionModel, Options
-
+import json
 try:
+    import ray
     from ray import air, tune
     from ray.tune import CLIReporter
     from ray.tune.schedulers import ASHAScheduler
     from ray.tune.search.hyperopt import HyperOptSearch
     from ray.tune.integration.pytorch_lightning import TuneReportCallback
-
+    ray.init(_temp_dir='/tmp/tihsu/')
 except ImportError:
     print("Tuning script requires additional dependencies. Please run: pip install \"ray[tune]\" hyperopt")
     exit()
@@ -28,13 +29,16 @@ except ImportError:
 
 DEFAULT_CONFIG = {
     "hidden_dim": tune.choice([32, 64, 96, 128]),
-
-    "num_encoder_layers": tune.choice([1, 2, 3, 4, 5, 6]),
+    "transformer_dim": tune.choice([32, 64, 96]),
+    "initial_embedding_dim": tune.choice([8, 16, 32]),
+    "num_embedding_layers": tune.choice([4,6,8,10]),
+    "num_encoder_layers": tune.choice([2, 4, 6, 8]),
     "num_branch_embedding_layers": tune.choice([1, 2, 4, 6]),
     "num_branch_encoder_layers": tune.choice([1, 2, 4, 6]),
 
     "num_regression_layers": tune.choice([1, 2, 4, 6]),
     "num_classification_layers": tune.choice([1, 2, 4, 6]),
+    "num_attention_heads": tune.choice([4,8]),
 
     "learning_rate": tune.loguniform(1e-5, 1e-1),
     "focal_gamma": tune.uniform(0.0, 1.0),
@@ -101,7 +105,8 @@ def tune_spanet(
     num_epochs: int = 10, 
     gpus_per_trial: int = 0,
     name: str = "spanet_asha_tune",
-    log_dir: str = "spanet_output"
+    log_dir: str = "spanet_output",
+    config_out: str = "best_config.json"
 ):
     # Load the search space. 
     # This seems to be the best way to load arbitrary tune search spaces.
@@ -149,16 +154,27 @@ def tune_spanet(
             search_alg=HyperOptSearch(),
             num_samples=num_trials,
         ),
-        run_config=air.RunConfig(
-            name=name,
-            storage_path=log_dir,
-            progress_reporter=reporter,
-        ),
+      #  run_config=air.RunConfig(
+      #      name=name,
+      #      storage_path=log_dir,
+      #      progress_reporter=reporter,
+      #  ),
+        run_config = ray.train.RunConfig(storage_path='/tmp/tihsu/ray_results/',local_dir='/tmp/tihsu/ray_results'),
         param_space=config,
     )
     results = tuner.fit()
 
     print("Best hyperparameters found were: ", results.get_best_result().config)
+    with open(base_options_file, 'r') as json_file:
+      base_options = json.load(json_file)
+
+    best_config = results.get_best_result().config
+    for key_ in best_config:
+      base_options[key_] = best_config[key_]
+
+    with open(config_out, 'w') as json_file:
+      json.dump(base_options, json_file, indent = 4)
+
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -195,6 +211,10 @@ if __name__ == '__main__':
     parser.add_argument(
         "-n", "--name", type=str, default="spanet_asha_tune",
         help="The sub-directory to create for this run.")
+
+    parser.add_argument(
+        "-o", "--config_out", type=str, default="best_config.json",
+        help = "spanet best configuration output")
 
     tune_spanet(**parser.parse_args().__dict__)
 
