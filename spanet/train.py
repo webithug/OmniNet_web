@@ -137,6 +137,7 @@ def main(
         TensorBoardLogger(save_dir=log_dir, name=name)
     )
 
+
     # Create the checkpoint for this training run. We will save the best validation networks based on 'accuracy'
     callbacks = [
         ModelCheckpoint(
@@ -177,12 +178,12 @@ def main(
     # Save the current hyperparameters to a json file in the checkpoint directory
     if master:
         print(f"Training Version {trainer.logger.version}")
-        makedirs(trainer.logger.log_dir, exist_ok=True)
+        makedirs(trainer.log_dir, exist_ok=True) # Fix bugs for WanDB Logger (has save_dir but not log_dir)
 
-        with open(f"{trainer.logger.log_dir}/options.json", 'w') as json_file:
+        with open(f"{trainer.log_dir}/options.json", 'w') as json_file:
             json.dump(options.__dict__, json_file, indent=4)
 
-        shutil.copy2(options.event_info_file, f"{trainer.logger.log_dir}/event.yaml")
+        shutil.copy2(options.event_info_file, f"{trainer.log_dir}/event.yaml")
 
     trainer.fit(model, ckpt_path=checkpoint)
     # -------------------------------------------------------------------------------------------------------
