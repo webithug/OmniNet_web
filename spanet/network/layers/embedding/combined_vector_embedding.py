@@ -11,7 +11,7 @@ from spanet.network.layers.embedding.position_embedding import PositionEmbedding
 from spanet.network.layers.embedding.global_vector_embedding import GlobalVectorEmbedding
 from spanet.network.layers.embedding.relative_vector_embedding import RelativeVectorEmbedding
 from spanet.network.layers.embedding.sequential_vector_embedding import SequentialVectorEmbedding
-
+from spanet.network.layers.embedding.PET_embedding import PointEdgeTransformerEmbedding
 
 class CombinedVectorEmbedding(nn.Module):
     __constants__ = ["num_input_features"]
@@ -39,7 +39,7 @@ class CombinedVectorEmbedding(nn.Module):
     @staticmethod
     def embedding_class(embedding_type):
         if embedding_type == InputType.Sequential:
-            return SequentialVectorEmbedding
+            return PointEdgeTransformerEmbedding
         elif embedding_type == InputType.Relative:
             return RelativeVectorEmbedding
         elif embedding_type == InputType.Global:
@@ -47,12 +47,12 @@ class CombinedVectorEmbedding(nn.Module):
         else:
             raise ValueError(f"Unknown Embedding Type: {embedding_type}")
 
-    def forward(self, source_data: Tensor, source_mask: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    def forward(self, source_data: Tensor, source_time: Tensor, source_mask: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         # Normalize incoming vectors based on training statistics.
         source_data = self.normalizer(source_data, source_mask)
 
         # Embed each vector type into the same latent space.
-        embeddings, padding_mask, sequence_mask, global_mask = self.vector_embeddings(source_data, source_mask)
+        embeddings, padding_mask, sequence_mask, global_mask = self.vector_embeddings(source_data, source_time, source_mask)
 
         # Add position embedding for this input type.
         embeddings = self.position_embedding(embeddings)

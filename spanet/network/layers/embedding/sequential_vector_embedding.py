@@ -6,7 +6,6 @@ from torch import Tensor, nn
 from spanet.network.layers.embedding_stack import EmbeddingStack
 from spanet.options import Options
 
-
 class SequentialVectorEmbedding(nn.Module):
     __constants__ = ["input_dim", "mask_sequence_vectors"]
 
@@ -17,13 +16,15 @@ class SequentialVectorEmbedding(nn.Module):
         self.mask_sequence_vectors = options.mask_sequence_vectors
         self.embedding_stack = EmbeddingStack(options, input_dim)
 
-    def forward(self, vectors: Tensor, mask: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    def forward(self, vectors: Tensor, time: Tensor, mask: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         """ A stack of linear blocks with each layer doubling the hidden dimension
 
         Parameters
         ----------
         vectors : [B, T, I]
             Input vector data.
+        time : [B, 1]
+            Input time (for diffusion purpose)
         mask : [B, T]
             Positive mask indicating that the jet is a real jet.
 
@@ -72,6 +73,15 @@ class SequentialVectorEmbedding(nn.Module):
         # Embed vectors into latent space.
         # output: [T, B, D]
         # --------------------------------
-        embeddings = self.embedding_stack(embeddings, sequence_mask)
+        
+        encoded = self.embedding_stack(embeddings, sequence_mask)
 
-        return embeddings, padding_mask, sequence_mask, global_mask
+
+        # ----------------------------
+        # Local Embedding (For Point-Edge Point Cloud)
+        # output: [T, B, D]
+        # ----------------------------
+
+          
+
+        return encoded, padding_mask, sequence_mask, global_mask

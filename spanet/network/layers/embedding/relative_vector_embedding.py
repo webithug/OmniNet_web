@@ -36,13 +36,15 @@ class RelativeVectorEmbedding(nn.Module):
 
         self.output = create_linear_block(options, options.hidden_dim, options.hidden_dim, options.skip_connections)
 
-    def forward(self, vectors: Tensor, mask: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    def forward(self, vectors: Tensor, time: Tensor, mask: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         """ A stack of linear blocks with each layer doubling the hidden dimension
 
         Parameters
         ----------
         vectors : [B, T, T, I]
             Relative vector data.
+        time : [B, 1]
+            Input time (for diffusion purpose)
         mask : [B, T, T]
             Positive mask indicating that the jet is a real jet.
 

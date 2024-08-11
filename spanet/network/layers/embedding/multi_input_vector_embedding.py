@@ -28,7 +28,7 @@ class MultiInputVectorEmbedding(nn.Module):
             options.skip_connections
         )
 
-    def forward(self, sources: List[Tuple[Tensor, Tensor]]) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    def forward(self, sources: List[Tuple[Tensor, Tensor]], source_time: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         """
 
         Parameters
@@ -56,7 +56,7 @@ class MultiInputVectorEmbedding(nn.Module):
             source_data, source_mask = sources[input_index]
 
             # Embed each vector type into the same latent space.
-            current_embeddings = vector_embedding_layer(source_data, source_mask)
+            current_embeddings = vector_embedding_layer(source_data, source_time, source_mask)
 
             # Accumulate all vectors into a single sequence.
             embeddings.append(current_embeddings[0])
