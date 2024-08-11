@@ -114,7 +114,6 @@ class FeatureInfo(NamedTuple):
 
 ClassificationInfo = str
 
-
 class SpecialKey(str, Enum):
     Mask = "MASK"
     Event = "EVENT"
@@ -130,6 +129,35 @@ class SpecialKey(str, Enum):
 class Source(NamedTuple):
     data: Tensor
     mask: Tensor
+
+
+class DistributionInfo(OrderedDict):
+    def __add__(self, other):
+        result = DistributionInfo()
+        for key in self:
+            if key in other:
+                result[key] = Source(
+                    data=self[key].data + other[key].data,
+                    mask=self[key].mask
+                )
+            else:
+                result[key] = self[key]
+        for key in other:
+            if key not in result:
+                result[key] = other[key]
+        return result
+
+    def __mul__(self, scalar):
+        result = DistributionInfo()
+        for key in self:
+            result[key] = Source(
+                data=self[key].data * scalar,
+                mask=self[key].mask
+            )
+        return result
+
+    def __rmul__(self, scalar):
+        return self.__mul__(scalar)
 
 
 class Statistics(NamedTuple):
@@ -154,6 +182,7 @@ class Batch(NamedTuple):
     assignment_targets: Tuple[AssignmentTargets, ...]
     regression_targets: Dict[str, Tensor]
     classification_targets: Dict[str, Tensor]
+    num_sequential_vectors: Dict[str, Tensor]
 
 
 class Outputs(NamedTuple):
@@ -162,7 +191,8 @@ class Outputs(NamedTuple):
     vectors: Dict[str, Tensor]
     regressions: Dict[str, Tensor]
     classifications: Dict[str, Tensor]
-
+    true_score: Dict[str, Dict[str, Tuple[Tensor, Tensor]]]
+    pred_score: Dict[str, Dict[str, Tuple[Tensor, Tensor]]]
 
 class Predictions(NamedTuple):
     assignments: List[NDArray[np.int64]]
