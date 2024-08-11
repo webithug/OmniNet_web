@@ -1,10 +1,12 @@
 import json
 from argparse import Namespace
-
+from typing import List
 
 class Options(Namespace):
     def __init__(self, event_info_file: str = "", training_file: str = "", validation_file: str = "", testing_file: str = ""):
         super(Options, self).__init__()
+
+        self.nMaxJet: int = 19
 
         # =========================================================================================
         # Network Architecture
@@ -12,6 +14,9 @@ class Options(Namespace):
 
         # Dimensions used internally by all hidden layers / transformers.
         self.hidden_dim: int = 128
+
+
+  
 
         # DEPRECATED
         # Internal dimensions used during transformer and some linear layers.
@@ -109,6 +114,29 @@ class Options(Namespace):
         # GELU
         # -------------------------------------------------
         self.linear_activation: str = "GELU"
+
+        # Time Fourier Projection dimension
+        self.time_fprojection_dim: int = 64
+
+        # Local Embed to provide edge information for point cloud
+        self.enable_local_embedding: bool = True
+        self.num_local_layer: int = 3
+        self.local_point_index: List = [2,3]
+        self.local_Krank: int = 2
+
+        # PET setting
+        self.PET_num_heads: int = 4 
+        self.PET_layer_scale: bool = True
+        self.PET_num_layers: int = 8
+        self.PET_drop_probability: float = 0.0
+        self.PET_dropout: float = 0.0
+        self.PET_layer_scale: bool = True
+        self.PET_layer_scale_init: float = 1e-5 
+        self.PET_talking_head: bool = False
+
+        # Global variable generation setting
+        self.diff_sub_resnet_nlayer: int = 2
+        self.diff_resnet_nlayer:     int = 3
 
         # Whether or not to apply a normalization layer during linear / embedding layers.
         #
@@ -234,6 +262,9 @@ class Options(Namespace):
 
         # Scalar term for classification Cross Entropy loss term
         self.classification_loss_scale: float = 0.0
+
+        # Scalar term for generation
+        self.generation_loss_scale: float = 1.0 #TODO: turn to zero after testing
 
         # Automatically balance loss terms using Jacobians.
         self.balance_losses: bool = True
