@@ -1,19 +1,23 @@
 import numpy as np
 import torch
-from torch import nn
+from torch import nn, Tensor
 
 from spanet.options import Options
-from spanet.dataset.types import Tuple, Outputs, Source, Predictions
+from spanet.dataset.types import Tuple, Outputs, Source, Predictions, DistributionInfo, InputType
+from typing import Dict
 
 from spanet.network.layers.vector_encoder import JetEncoder
 from spanet.network.layers.branch_decoder import BranchDecoder
 from spanet.network.layers.embedding import MultiInputVectorEmbedding
+from spanet.network.layers.embedding.local_embedding import LocalEmbedding
 from spanet.network.layers.regression_decoder import RegressionDecoder
 from spanet.network.layers.classification_decoder import ClassificationDecoder
+from spanet.network.layers.event_generation_decoder import EventGenerationDecoder
 
 from spanet.network.prediction_selection import extract_predictions
 from spanet.network.jet_reconstruction.jet_reconstruction_base import JetReconstructionBase
-
+from spanet.network.layers.diffusion.sampler import Diffusion_Sampler
+from collections import OrderedDict
 TArray = np.ndarray
 
 
@@ -37,6 +41,7 @@ class JetReconstructionNetwork(JetReconstructionBase):
             options,
             self.training_dataset
         ))
+
 
         self.encoder = compile_module(JetEncoder(
             options,
@@ -64,6 +69,18 @@ class JetReconstructionNetwork(JetReconstructionBase):
             self.training_dataset
         ))
 
+
+        self.event_generation_decoder = compile_module(EventGenerationDecoder(
+            options,
+            self.training_dataset
+        ))
+        self.diffusion_sampler = Diffusion_Sampler(options,
+                                                   self.training_dataset,
+                                                   self.event_generation_decoder.mean,
+                                                   self.event_generation_decoder.std,
+                                                   self.event_generation_decoder.mean_num_vector,
+                                                   self.event_generation_decoder.std_num_vector)
+
         # An example input for generating the network's graph, batch size of 2
         # self.example_input_array = tuple(x.contiguous() for x in self.training_dataset[:2][0])
 
@@ -71,12 +88,30 @@ class JetReconstructionNetwork(JetReconstructionBase):
     def enable_softmax(self):
         return True
 
-    def forward(self, sources: Tuple[Source, ...]) -> Outputs:
+    def forward(self, sources: Tuple[Source, ...], source_time: Tensor, source_num_vector: Dict[str, Tensor]) -> Outputs:
         # Embed all of the different input regression_vectors into the same latent space.
-        embeddings, padding_masks, sequence_masks, global_masks = self.embedding(sources)
+        embeddings, padding_masks, sequence_masks, global_masks = self.embedding(sources, source_time)
 
         # Extract features from data using transformer
         hidden, event_vector = self.encoder(embeddings, padding_masks, sequence_masks)
+
+
+        perturbed_sources, sources_score = self.diffusion_sampler.add_perturbation(sources, source_time, InputType.Global) # Output results are already normalized
+        perturbed_source_num_vector, source_num_vector_score = self.diffusion_sampler.add_perturbation_dict(source_num_vector, source_time) # Output are already normalized
+
+        perturbed_num_vectors_output, perturbed_global_source, perturbed_sequential_source, true_score = self.diffusion_sampler.prepare_format(perturbed_sources, source_time, perturbed_source_num_vector, sources_score, source_num_vector_score)
+        pred_v_global, pred_v_num_vector = self.event_generation_decoder(perturbed_global_source, source_time, perturbed_num_vectors_output)
+        pred_score = dict()
+        pred_score["Global"] = DistributionInfo()
+        pred_score["Sequential"] = DistributionInfo()
+   
+
+        for name, pred_ in pred_v_num_vector.items():
+          pred_score["Global"][name] = pred_
+        for name ,pred_ in pred_v_global.items():
+          pred_score["Global"][name] = pred_
+
+
 
         # Create output lists for each particle in event.
         assignments = []
@@ -110,17 +145,20 @@ class JetReconstructionNetwork(JetReconstructionBase):
         # Predict additional classification targets for any branch of the event.
         classifications = self.classification_decoder(encoded_vectors)
 
+
         return Outputs(
             assignments,
             detections,
             encoded_vectors,
             regressions,
-            classifications
+            classifications,
+            true_score,
+            pred_score
         )
 
-    def predict(self, sources: Tuple[Source, ...]) -> Predictions:
+    def predict(self, sources: Tuple[Source, ...], source_time: Tensor, source_num_vectors: Dict[str, Tensor]) -> Predictions:
         with torch.no_grad():
-            outputs = self.forward(sources)
+            outputs = self.forward(sources, source_time, source_num_vectors)
 
             # Extract assignment probabilities and find the least conflicting assignment.
             assignments = extract_predictions([
