@@ -30,6 +30,7 @@ TBatch = Tuple[
     Tensor,
     Tuple[Tuple[Tensor, Tensor], ...],
     Dict[str, Tensor],
+    Dict[str, Tensor],
     Dict[str, Tensor]
 ]
 
@@ -79,6 +80,8 @@ class JetReconstructionDataset(Dataset):
 
         self.mean = None
         self.std = None
+        self.num_sequential_vectors_mean = None
+        self.num_sequential_vectors_std  = None
 
         with h5py.File(self.data_file, 'r') as file:
             # Get the first merged_momenta input to find the total number of events in the dataset.
@@ -114,7 +117,14 @@ class JetReconstructionDataset(Dataset):
 
             # Update size information after loading and limiting dataset.
             self.num_events = limit_index.shape[0]
-            self.num_vectors = sum(source.num_vectors() for source in self.sources.values())
+            self.num_vectors = sum(source.num_vectors() for source in self.sources.values()) # num_vectors contain global entries
+
+            self.num_sequential_vectors = OrderedDict()
+
+            for name, source in self.sources.items():
+              if (self.event_info.input_types[name] == InputType.Sequential):
+                self.num_sequential_vectors[name] = source.num_vectors() # num_vectors only contain sequential entries
+
 
             print(f"Index Range: {limit_index[0]}...{limit_index[-1]}")
 
@@ -305,6 +315,41 @@ class JetReconstructionDataset(Dataset):
 
         return mean, std
 
+    def compute_num_vector_statistics(
+           self,
+           mean: Optional[Dict[str, Tensor]] = None,
+           std:  Optional[Dict[str, Tensor]] = None
+    ) -> Tuple[Dict[str, Tensor], Dict[str, Tensor]]:
+
+        """ Compute the mean and standard deviation of features with normalization enabled in the event file.
+
+        Parameters
+        ----------
+        mean: Tensor, optional
+        std: Tensor, optional
+            Give existing values for mean and standard deviation to set this value
+            dataset's statistics to those values. This is especially useful for
+            normalizing the validation and testing datasets with training statistics.
+
+        Returns
+        -------
+        (Tensor, Tensor)
+            The new mean and standard deviation for number of sequential vectors.
+        """
+        if mean is None:
+          mean = OrderedDict()
+          std  = OrderedDict()
+
+          for input_name, source in self.num_sequential_vectors.items():
+            mean[input_name] = torch.mean(source.to(torch.float32))
+            std[input_name]  = torch.std(source.to(torch.float32))
+
+        self.num_sequential_vectors_mean = mean
+        self.num_sequential_vectors_std  = std
+
+        return mean, std
+
+
     def compute_regression_statistics(self) -> Tuple[Dict[str, Tensor], Dict[str, Tensor]]:
         """ Compute the target regression statistics
 
@@ -426,6 +471,14 @@ class JetReconstructionDataset(Dataset):
         self.num_events = event_mask.sum().item()
         self.num_vectors = sum(source.num_vectors() for source in self.sources.values())
 
+
+        self.num_sequential_vectors = OrderedDict()
+        for name, source in self.sources.items():
+            if (self.event_info.input_types[name] == InputType.Sequential):
+              self.num_sequential_vectors[name] = source.num_vectors() # num_vectors only contain sequential entries
+
+
+
     def limit_dataset_to_partial_events(self):
         vector_masks = torch.stack([target[1] for target in self.assignments.values()])
         non_empty_events = vector_masks.any(0)
@@ -465,10 +518,17 @@ class JetReconstructionDataset(Dataset):
             if value is not None
         }
 
+        num_sequential_vectors = {
+            key: value[item]
+            for key, value in self.num_sequential_vectors.items()
+            if value is not None
+        }
+
         return Batch(
             sources,
             self.num_vectors[item],
             assignments,
             regressions,
-            classifications
+            classifications,
+            num_sequential_vectors
         )

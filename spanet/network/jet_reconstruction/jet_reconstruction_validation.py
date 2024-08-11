@@ -9,7 +9,7 @@ from sklearn import metrics as sk_metrics
 from spanet.options import Options
 from spanet.dataset.evaluator import SymmetricEvaluator
 from spanet.network.jet_reconstruction.jet_reconstruction_network import JetReconstructionNetwork
-
+import wandb
 
 class JetReconstructionValidation(JetReconstructionNetwork):
     def __init__(self, options: Options, torch_script: bool = False):
@@ -92,12 +92,13 @@ class JetReconstructionValidation(JetReconstructionNetwork):
 
     def validation_step(self, batch, batch_idx) -> Dict[str, np.float32]:
         # Run the base prediction step
-        sources, num_jets, targets, regression_targets, classification_targets = batch
-        jet_predictions, particle_scores, regressions, classifications = self.predict(sources)
+        sources, num_jets, targets, regression_targets, classification_targets, num_seq_jets = batch
 
         batch_size = num_jets.shape[0]
         num_targets = len(targets)
 
+        source_time = torch.rand(batch_size, 1).to(self.device)
+        jet_predictions, particle_scores, regressions, classifications = self.predict(sources, source_time, num_seq_jets)
         # Stack all of the targets into single array, we will also move to numpy for easier the numba computations.
         stacked_targets = np.zeros(num_targets, dtype=object)
         stacked_masks = np.zeros((num_targets, batch_size), dtype=bool)
@@ -136,10 +137,12 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             self.log(f"REGRESSION/{key}_absolute_error", absolute_error.mean(), sync_dist=True)
 
             percent_deviation = delta / regression_targets[key]
-            self.logger.experiment.add_histogram(f"REGRESSION/{key}_percent_deviation", percent_deviation, self.global_step)
+            #self.logger.experiment.add_histogram(f"REGRESSION/{key}_percent_deviation", percent_deviation, self.global_step) # TensorBoard
+            #percent_deviation = wandb.plot.histogram(np.array(percent_deviation), "percent deviation")
+            #self.logger.experiment.log(f"REGRESSION/{key}_percent_deviation", percent_deviation)
 
             absolute_deviation = delta
-            self.logger.experiment.add_histogram(f"REGRESSION/{key}_absolute_deviation", absolute_deviation, self.global_step)
+#            self.logger.experiment.add_histogram(f"REGRESSION/{key}_absolute_deviation", absolute_deviation, self.global_step)
 
         for key in classifications:
             accuracy = (classifications[key] == classification_targets[key])

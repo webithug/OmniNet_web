@@ -200,11 +200,31 @@ class JetReconstructionTraining(JetReconstructionNetwork):
 
         return total_loss + classification_terms
 
+    def add_generation_loss(
+      self,
+      total_loss: List[Tensor],
+      predict_score: Dict[str, Tuple[Tensor, Tensor]],
+      target_score:  Dict[str, Tuple[Tensor, Tensor]],
+      name: str
+    ) -> List[Tensor]:
+
+      generation_terms = []
+
+      for key in target_score:
+        v_prediction, mask_prediction = predict_score[key]
+        v_target,  mask_target     = target_score[key]
+        current_loss       = torch.mean((v_prediction - v_target) ** 2)
+        generation_terms.append(self.options.generation_loss_scale * current_loss)
+        with torch.no_grad():
+          self.log(f"loss/generation/{name}/{key}", current_loss, sync_dist=True)
+      return total_loss + generation_terms
+
     def training_step(self, batch: Batch, batch_nb: int) -> Dict[str, Tensor]:
         # ===================================================================================================
         # Network Forward Pass
         # ---------------------------------------------------------------------------------------------------
-        outputs = self.forward(batch.sources)
+        source_time = torch.rand(self.options.batch_size, 1).to(self.device)
+        outputs = self.forward(batch.sources, source_time, batch.num_sequential_vectors)
 
         # ===================================================================================================
         # Initial log-likelihood loss for classification task
@@ -279,6 +299,9 @@ class JetReconstructionTraining(JetReconstructionNetwork):
 
         if self.options.classification_loss_scale > 0:
             total_loss = self.add_classification_loss(total_loss, outputs.classifications, batch.classification_targets)
+
+        if self.options.generation_loss_scale > 0:
+            total_loss = self.add_generation_loss(total_loss, outputs.true_score["Global"], outputs.pred_score["Global"], "Global")
 
         # ===================================================================================================
         # Combine and return the loss
