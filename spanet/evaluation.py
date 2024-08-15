@@ -95,16 +95,48 @@ def evaluate_on_test_dataset(
 
     full_outputs = []
 
-    dataloader = model.test_dataloader()
+    full_generations = defaultdict(list)
+    full_reference   = defaultdict(list)
+
+    dataloader = model.val_dataloader() # TODO: DEVELOPPING TESTING->VAL
     if progress:
         dataloader = progress.track(model.test_dataloader(), description="Evaluating Model")
 
     for batch in dataloader:
         sources = tuple(Source(x[0].to(model.device), x[1].to(model.device)) for x in batch.sources)
-
+        batch_size = sources[0].data.shape[0]
+        source_time = torch.zeros((batch_size, 1)).to(model.device)
         with torch.cuda.amp.autocast(enabled=fp16):
-            outputs = model.forward(sources)
+            outputs = model.forward(sources, source_time, batch.num_sequential_vectors)
+            generated = model.generate(batch_size)
+            reference = model.get_reference_sample(sources, source_time, batch.num_sequential_vectors)
 
+        generated_np = dict()
+        reference_np = dict()
+        for key, source in generated.items():
+          data_gen, mask_gen = source
+          data_ref, mask_ref = reference[key]
+
+          mask_gen_dim = torch.flatten(mask_gen.bool()).detach().cpu().numpy()
+          mask_ref_dim = torch.flatten(mask_ref.bool()).detach().cpu().numpy()
+
+          dim = data_gen.shape[-1]
+          for dim_ in range(dim):
+            data_gen_dim = torch.flatten(data_gen[..., dim_]).detach().cpu().numpy()
+            data_ref_dim = torch.flatten(data_ref[..., dim_]).detach().cpu().numpy()
+            data_gen_dim = data_gen_dim[mask_gen_dim]
+            data_ref_dim = data_ref_dim[mask_ref_dim]
+            if "num_" in key:
+              name = key
+            else:
+              feature = model.input_features[key][dim_]
+              name    = key + "_" + feature.name
+              if feature.log_scale:
+                name  = "log({})".format(name)
+
+            generated_np[name] = data_gen_dim
+            reference_np[name] = data_ref_dim
+    
         assignment_indices = extract_predictions([
             np.nan_to_num(assignment.detach().cpu().numpy(), -np.inf)
             for assignment in outputs.assignments
@@ -159,12 +191,19 @@ def evaluate_on_test_dataset(
         if return_full_output:
             full_outputs.append(tree_map(lambda x: x.cpu().numpy(), outputs))
 
+        for key, generation in generated_np.items():
+            full_generations[key].append(generation)
+
+        for key, reference in reference_np.items():
+            full_reference[key].append(reference)
     evaluation = Evaluation(
         dict_concatenate(full_assignments),
         dict_concatenate(full_assignment_probabilities),
         dict_concatenate(full_detection_probabilities),
         dict_concatenate(full_regressions),
-        dict_concatenate(full_classifications)
+        dict_concatenate(full_classifications),
+        dict_concatenate(full_generations),
+        dict_concatenate(full_reference)
     )
 
     if return_full_output:

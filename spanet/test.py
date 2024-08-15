@@ -10,7 +10,7 @@ from numpy.typing import ArrayLike
 from spanet.dataset.evaluator import SymmetricEvaluator, EventInfo
 from spanet.evaluation import evaluate_on_test_dataset, load_model
 from spanet.dataset.types import Evaluation
-
+from spanet.util.plotter import plot_and_save_histograms, plot_and_save_comparison_histograms
 
 def formatter(value: Any) -> str:
     """ A monolithic formatter function to convert possible values to output strings.
@@ -234,6 +234,9 @@ def main(
     model = load_model(log_directory, test_file, event_file, batch_size, gpu, fp16=fp16)
     evaluation = evaluate_on_test_dataset(model, fp16=fp16)
 
+    # Store generation plots
+    plot_and_save_histograms(evaluation.generations, 'test')
+    plot_and_save_comparison_histograms(evaluation.generations, evaluation.reference, 'test')
     # Flatten predictions
     predictions = list(evaluation.assignments.values())
 
