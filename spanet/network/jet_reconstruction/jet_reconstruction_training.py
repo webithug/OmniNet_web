@@ -6,7 +6,7 @@ from torch import Tensor
 from torch.nn import functional as F
 
 from spanet.options import Options
-from spanet.dataset.types import Batch, Source, AssignmentTargets
+from spanet.dataset.types import Batch, Source, AssignmentTargets, DistributionInfo
 from spanet.dataset.regressions import regression_loss
 from spanet.network.jet_reconstruction.jet_reconstruction_network import JetReconstructionNetwork
 from spanet.network.utilities.divergence_losses import assignment_cross_entropy_loss, jensen_shannon_divergence
@@ -203,20 +203,23 @@ class JetReconstructionTraining(JetReconstructionNetwork):
     def add_generation_loss(
       self,
       total_loss: List[Tensor],
-      predict_score: Dict[str, Tuple[Tensor, Tensor]],
-      target_score:  Dict[str, Tuple[Tensor, Tensor]],
+      predict_score: Tuple[Tensor, Tensor],
+      target_score:  Tuple[Tensor, Tensor],
       name: str
     ) -> List[Tensor]:
 
       generation_terms = []
 
-      for key in target_score:
-        v_prediction, mask_prediction = predict_score[key]
-        v_target,  mask_target     = target_score[key]
+
+      v_prediction, mask_prediction = predict_score
+      v_target,  mask_target        = target_score
+      if name == "Sequential":
+        current_loss       = torch.sum(((v_prediction - v_target) ** 2) * (mask_prediction.float())) / (torch.sum((mask_prediction.float()))) / v_prediction.shape[-1]
+      else:
         current_loss       = torch.mean((v_prediction - v_target) ** 2)
-        generation_terms.append(self.options.generation_loss_scale * current_loss)
-        with torch.no_grad():
-          self.log(f"loss/generation/{name}/{key}", current_loss, sync_dist=True)
+      generation_terms.append(self.options.generation_loss_scale * current_loss)
+      with torch.no_grad():
+        self.log(f"loss/generation/{name}", current_loss, sync_dist=True)
       return total_loss + generation_terms
 
     def training_step(self, batch: Batch, batch_nb: int) -> Dict[str, Tensor]:
@@ -301,7 +304,9 @@ class JetReconstructionTraining(JetReconstructionNetwork):
             total_loss = self.add_classification_loss(total_loss, outputs.classifications, batch.classification_targets)
 
         if self.options.generation_loss_scale > 0:
-            total_loss = self.add_generation_loss(total_loss, outputs.true_score["Global"], outputs.pred_score["Global"], "Global")
+            total_loss = self.add_generation_loss(total_loss, outputs.pred_score["Global"], outputs.true_score["Global"], "Global")
+            total_loss = self.add_generation_loss(total_loss, outputs.pred_score["Sequential"], outputs.true_score["Sequential"], "Sequential")
+
 
         # ===================================================================================================
         # Combine and return the loss
@@ -309,5 +314,4 @@ class JetReconstructionTraining(JetReconstructionNetwork):
         total_loss = torch.cat([loss.view(-1) for loss in total_loss])
 
         self.log("loss/total_loss", total_loss.sum(), sync_dist=True)
-
         return total_loss.mean()
