@@ -8,7 +8,7 @@ from spanet.network.layers.linear_block.regularization import StochasticDepth, L
 
 
 class PointEdgeTransformerBlock(nn.Module):
-  def __init__(self, options: Options):
+  def __init__(self, options: Options, extra_dim: int = 0):
     super(PointEdgeTransformerBlock, self).__init__()
     self.projection_dim = options.hidden_dim
     self.num_heads      = options.PET_num_heads
@@ -18,8 +18,8 @@ class PointEdgeTransformerBlock(nn.Module):
     self.layer_scale_init = options.PET_layer_scale_init
     self.talking_head   = options.PET_talking_head
 
-    self.group_norm1    = nn.GroupNorm(1, options.nMaxJet)
-    self.group_norm2    = nn.GroupNorm(1, options.nMaxJet)
+    self.group_norm1    = nn.GroupNorm(1, options.nMaxJet + extra_dim)
+    self.group_norm2    = nn.GroupNorm(1, options.nMaxJet + extra_dim)
     self.dense1         = nn.Sequential(nn.Linear(self.projection_dim, 2 * self.projection_dim), nn.GELU())
     self.dense2         = nn.Linear(2*self.projection_dim, self.projection_dim)
     self.dropout_block  = nn.Dropout(self.dropout)
@@ -60,10 +60,10 @@ class PointEdgeTransformerBlock(nn.Module):
     return encoded
 
 class PointEdgeTransformer(nn.Module):
-  def __init__(self, options: Options, num_layers: int):
+  def __init__(self, options: Options, num_layers: int, extra_dim: int = 0):
     super(PointEdgeTransformer, self).__init__()
     self.masking = create_masking(options.masking)
-    self.transformers = nn.ModuleList([PointEdgeTransformerBlock(options) for i in range(num_layers)])
+    self.transformers = nn.ModuleList([PointEdgeTransformerBlock(options, extra_dim) for i in range(num_layers)])
 
   def forward(self, x: Tensor, padding_mask: Tensor, sequence_mask: Tensor) -> Tensor:
     encoded = x.contiguous()
