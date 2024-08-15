@@ -138,6 +138,9 @@ class Options(Namespace):
         self.diff_sub_resnet_nlayer: int = 2
         self.diff_resnet_nlayer:     int = 3
 
+        # Sequential variable generation setting
+        self.diff_transformer_nlayer: int = 2
+
         # Whether or not to apply a normalization layer during linear / embedding layers.
         #
         # Options are:
