@@ -131,6 +131,52 @@ class Source(NamedTuple):
     mask: Tensor
 
 
+class SourceTuple(Tuple[Source, ...]):
+  def __add__(self, other):
+    result = []
+    for index, source in enumerate(self):
+      data, mask = source
+      if isinstance(other, SourceTuple):
+        data_o, mask_o = other[index]
+        result.append(Source(data + data_o, mask))
+      elif isinstance(other, list):
+        result.append(Source(data + other[index], mask))
+      else:
+        result.append(Source(data + other, mask))
+    return SourceTuple(tuple(result))
+
+  def __mul__(self, other):
+    result = []
+    for index, source in enumerate(self):
+      data, mask = source
+      if isinstance(other, SourceTuple):
+        data_o, mask_o = other[index]
+        result.append(Source(data * data_o, mask))
+      elif isinstance(other, list):
+        result.append(Source(data * other[index], mask))
+      else:
+        result.append(Source(data * other, mask))
+
+    return SourceTuple(tuple(result))
+
+  def __rmul__(self, scalar):
+    return self.__mul__(scalar)
+
+  def __neg__(self):
+    result = []
+    for index, source in enumerate(self):
+      data, mask = source
+      result.append(Source(data * -1.0, mask))
+    return SourceTuple(tuple(result))
+
+  def __sub__(self, other):
+    # Subtraction is defined as adding the negation
+    return self.__add__(-other)
+
+  def __rsub__(self, other):
+    # Right subtraction is defined as other + (-self)
+    return (-self).__add__(other)
+
 class DistributionInfo(OrderedDict):
     def __add__(self, other):
         result = DistributionInfo()
@@ -138,6 +184,36 @@ class DistributionInfo(OrderedDict):
             if key in other:
                 result[key] = Source(
                     data=self[key].data + other[key].data,
+                    mask=self[key].mask
+                )
+            else:
+                result[key] = self[key]
+        for key in other:
+            if key not in result:
+                result[key] = other[key]
+        return result
+
+    def __sub__(self, other):
+        result = DistributionInfo()
+        for key in self:
+            if key in other:
+                result[key] = Source(
+                    data=self[key].data - other[key].data,
+                    mask=self[key].mask
+                )
+            else:
+                result[key] = self[key]
+        for key in other:
+            if key not in result:
+                result[key] = other[key]
+        return result
+
+    def __rsub__(self, other):
+        result = DistributionInfo()
+        for key in self:
+            if key in other:
+                result[key] = Source(
+                    data=other[key].data - self[key].data,
                     mask=self[key].mask
                 )
             else:
@@ -191,8 +267,8 @@ class Outputs(NamedTuple):
     vectors: Dict[str, Tensor]
     regressions: Dict[str, Tensor]
     classifications: Dict[str, Tensor]
-    true_score: Dict[str, Dict[str, Tuple[Tensor, Tensor]]]
-    pred_score: Dict[str, Dict[str, Tuple[Tensor, Tensor]]]
+    true_score: Dict[str, Tuple[Tensor, Tensor]]
+    pred_score: Dict[str, Tuple[Tensor, Tensor]]
 
 class Predictions(NamedTuple):
     assignments: List[NDArray[np.int64]]
@@ -207,5 +283,6 @@ class Evaluation(NamedTuple):
     detection_probabilities: Dict[str, NDArray[np.float32]]
     regressions: Dict[str, NDArray[np.float32]]
     classifications: Dict[str, NDArray[np.float32]]
-
+    generations: Dict[str, NDArray[np.float32]] 
+    reference: Dict[str, NDArray[np.float32]]
 
