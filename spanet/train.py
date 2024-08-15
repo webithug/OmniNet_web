@@ -18,10 +18,24 @@ from pytorch_lightning.callbacks import (
     RichModelSummary,
     DeviceStatsMonitor,
     ModelSummary,
-    TQDMProgressBar
+    TQDMProgressBar,
+    GradientAccumulationScheduler,
+    Callback
 )
 
 from spanet import JetReconstructionModel, Options
+
+
+class GradientAndParameterMonitor(Callback):
+    def on_after_backward(self, trainer, pl_module):
+        if trainer.global_step % trainer.log_every_n_steps == 0:
+            logger = trainer.logger
+            for name, param in pl_module.named_parameters():
+                if param.grad is not None:
+                    # Log gradients
+                    logger.log_metrics({f'gradients/{name}': param.grad.norm().item()}, step=trainer.global_step)
+                    # Log parameter values
+                    logger.log_metrics({f'parameters/{name}': param.norm().item()}, step=trainer.global_step)
 
 
 def main(
@@ -150,7 +164,7 @@ def main(
         LearningRateMonitor(),
         DeviceStatsMonitor(),
         RichProgressBar() if _RICH_AVAILABLE else TQDMProgressBar(),
-        RichModelSummary(max_depth=1) if _RICH_AVAILABLE else ModelSummary(max_depth=1)
+        RichModelSummary(max_depth=1) if _RICH_AVAILABLE else ModelSummary(max_depth=1),
     ]
 
     epochs = options.epochs
@@ -185,6 +199,8 @@ def main(
 
         shutil.copy2(options.event_info_file, f"{trainer.log_dir}/event.yaml")
 
+
+    logger.watch(model, log = "all", log_freq = 10)
     trainer.fit(model, ckpt_path=checkpoint)
     # -------------------------------------------------------------------------------------------------------
 
