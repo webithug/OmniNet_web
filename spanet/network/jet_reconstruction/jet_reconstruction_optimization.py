@@ -19,7 +19,8 @@ class JetReconstructionOptimization(JetReconstructionNetwork):
             (self.options.detection_loss_scale > 0) * len(self.training_dataset.assignments) +
             (self.options.regression_loss_scale > 0) * len(self.training_dataset.regressions) +
             (self.options.classification_loss_scale > 0) * len(self.training_dataset.classifications) +
-            (self.options.kl_loss_scale > 0)
+            (self.options.kl_loss_scale > 0) + 
+            (self.options.generation_loss_scale > 0) * 2 # One from global, one from sequential
         )
 
         self.loss_weight_logits = torch.nn.Parameter(torch.zeros(self.num_losses), requires_grad=True)

@@ -119,7 +119,7 @@ class JetReconstructionBase(pl.LightningModule):
             testing_dataset = self.dataset(
                 data_file=self.options.testing_file,
                 event_info=self.options.event_info_file,
-                limit_index=1.0,
+                limit_index=self.options.dataset_limit, # TODO: Allow modified testing range
                 vector_limit=self.options.limit_to_num_jets
             )
 
@@ -168,6 +168,7 @@ class JetReconstructionBase(pl.LightningModule):
         ]
 
         optimizer = optimizer(optimizer_grouped_parameters, lr=self.options.learning_rate)
+
 
         if self.options.learning_rate_cycles < 1:
             scheduler = get_linear_schedule_with_warmup(
