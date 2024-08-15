@@ -49,7 +49,7 @@ class CombinedVectorEmbedding(nn.Module):
 
     def forward(self, source_data: Tensor, source_time: Tensor, source_mask: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         # Normalize incoming vectors based on training statistics.
-        source_data = self.normalizer(source_data, source_mask)
+        # source_data = self.normalizer(source_data, source_mask) # Normalization step changines to spanet.network.layers.diffusion.sampler.add_perturbation
 
         # Embed each vector type into the same latent space.
         embeddings, padding_mask, sequence_mask, global_mask = self.vector_embeddings(source_data, source_time, source_mask)

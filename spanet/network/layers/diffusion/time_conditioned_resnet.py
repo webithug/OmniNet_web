@@ -61,8 +61,8 @@ class TimeConditionedResNet(nn.Module):
     
     embed_time = self.fourier_projection(time)
     # TODO: Add conditional labels
-    embed_time = self.dense_t(embed_time).unsqueeze(1) # [2B, 1, 1]
-    scale, shift = torch.chunk(embed_time, 2, dim = -1) # [B, 1, 1], [B, 1, 1]
+    embed_time = self.dense_t(embed_time).unsqueeze(1) # [B, 1, 2D]
+    scale, shift = torch.chunk(embed_time, 2, dim = -1) # [B, 1, D], [B, 1, D]
 
     embed_x = self.dense_layer(x)
     embed_x = embed_x * (1.0 + scale) + shift
