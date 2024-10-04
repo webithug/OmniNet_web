@@ -14,6 +14,7 @@ from spanet.network.layers.regression_decoder import RegressionDecoder
 from spanet.network.layers.classification_decoder import ClassificationDecoder
 from spanet.network.layers.event_generation_decoder import EventGenerationDecoder
 from spanet.network.layers.jet_generation_decoder import JetGenerationDecoder
+from spanet.network.layers.embedding.normalizer import Normalizer
 
 from spanet.network.prediction_selection import extract_predictions
 from spanet.network.jet_reconstruction.jet_reconstruction_base import JetReconstructionBase
@@ -37,6 +38,20 @@ class JetReconstructionNetwork(JetReconstructionBase):
         compile_module = torch.jit.script if torch_script else lambda x: x
 
         self.hidden_dim = options.hidden_dim
+
+        # Normalizer
+        mean_num_vector, std_num_vector = self.training_dataset.compute_num_vector_statistics()
+        mean, std                       = self.training_dataset.compute_source_statistics()
+        self.num_vector_normalizer = []
+        self.normalizer            = []
+
+        for name, source in mean_num_vector.items():
+          self.num_vector_normalizer.append(Normalizer(source, std_num_vector[name]))
+        self.num_vector_normalizer = nn.ModuleList(self.num_vector_normalizer)
+
+        for name, source in mean.items():
+          self.normalizer.append(Normalizer(source, std[name]))
+        self.normalizer = nn.ModuleList(self.normalizer)
 
         self.embedding = compile_module(MultiInputVectorEmbedding(
             options,
@@ -78,10 +93,7 @@ class JetReconstructionNetwork(JetReconstructionBase):
 
         self.diffusion_sampler = Diffusion_Sampler(options,
                                                    self.training_dataset,
-                                                   self.event_generation_decoder.mean,
-                                                   self.event_generation_decoder.std,
-                                                   self.event_generation_decoder.mean_num_vector,
-                                                   self.event_generation_decoder.std_num_vector)
+                                                   mean_num_vector)
 
         self.jet_generation_decoder  = compile_module(JetGenerationDecoder(
           options,
@@ -99,22 +111,25 @@ class JetReconstructionNetwork(JetReconstructionBase):
     def enable_softmax(self):
         return True
 
-    def forward(self, sources: Tuple[Source, ...], source_time: Tensor, source_num_vector: Dict[str, Tensor]) -> Outputs:
+    def forward(self, sources: Tuple[Source, ...], source_time: Tensor, source_num_vector: Dict[str, Tensor], mode: str = "classifier") -> Outputs:
 
         ############################################################
         ## Perform normalization & Add perturbation for diffusion ##
         ############################################################
 
-        # Perturbed only global source
-        sources_global_perturbed, sources_score_global_perturbed = self.diffusion_sampler.add_perturbation(sources, source_time, InputType.Global) # Output results are already normalized
-        # Perturbed only sequential, source
-        sources_seq_perturbed, sources_score_seq_perturbed        = self.diffusion_sampler.add_perturbation(sources, source_time, InputType.Sequential) # Output are already normalized
-        # Perturb number of vectors(jets)
-        perturbed_source_num_vector, source_num_vector_score = self.diffusion_sampler.add_perturbation_dict(source_num_vector, source_time) # Output are already normalized
+        if (mode == 'classifier'):
+          sources_seq_perturbed = sources
+        else:
+          # Perturbed only global source
+          sources_global_perturbed, sources_score_global_perturbed = self.diffusion_sampler.add_perturbation(sources, source_time, InputType.Global, self.normalizer) # Output results are already normalized
+          # Perturbed only sequential, source
+          sources_seq_perturbed, sources_score_seq_perturbed        = self.diffusion_sampler.add_perturbation(sources, source_time, InputType.Sequential, self.normalizer) # Output are already normalized
+          # Perturb number of vectors(jets)
+          perturbed_source_num_vector, source_num_vector_score = self.diffusion_sampler.add_perturbation_dict(source_num_vector, source_time, self.num_vector_normalizer) # Output are already normalized
 
-        # Combine global information for the input of global generation head
-        x_global_perturbed, score_global_perturbed = self.diffusion_sampler.prepare_format(sources_global_perturbed, source_time, perturbed_source_num_vector, sources_score_global_perturbed, source_num_vector_score)
-        x_seq_perturbed, score_seq_perturbed = self.diffusion_sampler.prepare_format(sources_seq_perturbed, source_time, perturbed_source_num_vector, sources_score_seq_perturbed, source_num_vector_score)
+          # Combine global information for the input of global generation head
+          x_global_perturbed, score_global_perturbed = self.diffusion_sampler.prepare_format(sources_global_perturbed, source_time, perturbed_source_num_vector, sources_score_global_perturbed, source_num_vector_score)
+          x_seq_perturbed, score_seq_perturbed = self.diffusion_sampler.prepare_format(sources_seq_perturbed, source_time, perturbed_source_num_vector, sources_score_seq_perturbed, source_num_vector_score)
 
         # Embed all of the different input regression_vectors into the same latent space.
         embeddings, padding_masks, sequence_masks, global_masks = self.embedding(sources_seq_perturbed, source_time)
@@ -122,17 +137,20 @@ class JetReconstructionNetwork(JetReconstructionBase):
         # Extract features from data using transformer
         hidden, event_vector = self.encoder(embeddings, padding_masks, sequence_masks)
 
+        if (mode == 'classifier'):
+          pred_score = {"Global": None, "Sequential": None}
+          true_score = {"Global": None, "Sequential": None}
+        else:
+          pred_v_global = self.event_generation_decoder(x_global_perturbed["Global"], source_time) # pred_v_global: Source(data, mask)
+          pred_v_sequential = self.jet_generation_decoder(embeddings, source_time, padding_masks, sequence_masks, global_masks) 
 
-        pred_v_global = self.event_generation_decoder(x_global_perturbed["Global"], source_time) # pred_v_global: Source(data, mask)
-        pred_v_sequential = self.jet_generation_decoder(embeddings, source_time, padding_masks, sequence_masks, global_masks) 
+          pred_score = dict()
+          pred_score["Global"] = pred_v_global
+          pred_score["Sequential"] = pred_v_sequential
 
-        pred_score = dict()
-        pred_score["Global"] = pred_v_global
-        pred_score["Sequential"] = pred_v_sequential
-
-        true_score = dict()
-        true_score["Global"] = score_global_perturbed["Global"]
-        true_score["Sequential"] = score_seq_perturbed["Sequential"]
+          true_score = dict()
+          true_score["Global"] = score_global_perturbed["Global"]
+          true_score["Sequential"] = score_seq_perturbed["Sequential"]
 
 
         # Create output lists for each particle in event.
@@ -251,17 +269,17 @@ class JetReconstructionNetwork(JetReconstructionBase):
       return tuple(output_v), global_masks
 
     def generate(self, batch_size: int):
-      Generated_Feature = self.diffusion_sampler.generate(self, batch_size, num_steps = 100)
+      Generated_Feature = self.diffusion_sampler.generate(self, batch_size, self.normalizer, self.num_vector_normalizer, num_steps = 100)
       return Generated_Feature
 
 
     def get_reference_sample(self, sources: Tuple[Source, ...], source_time: Tensor, source_num_vector: Dict[str, Tensor]) -> Outputs:
 
-      perturbed_sources, sources_score = self.diffusion_sampler.add_perturbation(sources, source_time, InputType.Global) # Output results are already normalized
-      perturbed_source_num_vector, source_num_vector_score = self.diffusion_sampler.add_perturbation_dict(source_num_vector, source_time) # Output are already normalized
+      perturbed_sources, sources_score = self.diffusion_sampler.add_perturbation(sources, source_time, InputType.Global, self.normalizer) # Output results are already normalized
+      perturbed_source_num_vector, source_num_vector_score = self.diffusion_sampler.add_perturbation_dict(source_num_vector, source_time, self.num_vector_normalizer) # Output are already normalized
       perturbed_x, perturbed_score = self.diffusion_sampler.prepare_format(perturbed_sources, source_time, perturbed_source_num_vector, sources_score, source_num_vector_score)
 
       sample = self.diffusion_sampler.decode_tensor(perturbed_x["Global"], "Global")
       sample_seq = self.diffusion_sampler.decode_tensor(perturbed_x["Sequential"], "Sequential")
-      sample = self.diffusion_sampler.denormalizer(sample, sample_seq)
+      sample = self.diffusion_sampler.denormalizer(sample, sample_seq, self.normalizer, self.num_vector_normalizer)
       return sample
