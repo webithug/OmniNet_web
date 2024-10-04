@@ -6,7 +6,7 @@ class Options(Namespace):
     def __init__(self, event_info_file: str = "", training_file: str = "", validation_file: str = "", testing_file: str = ""):
         super(Options, self).__init__()
 
-        self.nMaxJet: int = 19
+        self.nMaxJet: int = 10
 
         # =========================================================================================
         # Network Architecture
@@ -267,7 +267,7 @@ class Options(Namespace):
         self.classification_loss_scale: float = 0.0
 
         # Scalar term for generation
-        self.generation_loss_scale: float = 1.0 #TODO: turn to zero after testing
+        self.generation_loss_scale: float = 0.0 #TODO: turn to zero after testing
 
         # Automatically balance loss terms using Jacobians.
         self.balance_losses: bool = True
