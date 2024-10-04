@@ -22,7 +22,7 @@ An example demonstrating these new features may be found here: [docs/TTH.md](doc
 You can install this package to use it outside of the repository after cloning.
 
 ```bash
-git clone https://github.com/tihsu99/OmniNet
+git clone https://github.com/UW-EPE-ML/OmniNet -b OmniLearn
 cd OmniNet
 pip install .
 ```
