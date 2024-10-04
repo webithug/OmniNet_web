@@ -11,3 +11,7 @@ class Normalizer(nn.Module):
     def forward(self, data: Tensor, mask: Tensor) -> Tensor:
         data = (data - self.mean) / self.std
         return data * mask.unsqueeze(-1)
+
+    def denormalize(self, data:Tensor, mask: Tensor) -> Tensor:
+        data = data * self.std + self.mean
+        return data * mask.unsqueeze(-1)
