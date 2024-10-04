@@ -8,15 +8,11 @@ from collections import OrderedDict
 from tqdm import tqdm
 
 class Diffusion_Sampler():
-  def __init__(self, options: Options, training_dataset: JetReconstructionDataset, mean = Dict, std = Dict, mean_num_vector = Dict, std_num_vector = Dict):
+  def __init__(self, options: Options, training_dataset: JetReconstructionDataset, mean_num_vector: Dict):
 
     self.input_types = training_dataset.event_info.input_types
     self.input_features = training_dataset.event_info.input_features
-
-    self.mean        = mean
-    self.std         = std
-    self.mean_num_vector = mean_num_vector
-    self.std_num_vector  = std_num_vector
+    self.mean_num_vector = mean_num_vector 
 
     # DistributionInfo -> Source mapping dimension with corresponding name
     self.output_dim_mapping = dict()
@@ -31,22 +27,24 @@ class Diffusion_Sampler():
     for name, source in mean_num_vector.items():
       self.output_dim_mapping["Global"][name] = [global_output_index]
       global_output_index += 1
-    for name, source in mean.items():
+
+    for name, source in self.input_features.items():
       if (self.input_types[name] == InputType.Global):
         num_global_entry += 1
         self.output_dim_mapping["Global"][name] = []
-        for i in range(source.shape[-1]):
+        for i in range(len(source)):
           self.output_dim_mapping["Global"][name].append(global_output_index)
           global_output_index += 1
       else:
         self.output_dim_mapping["Sequential"][name] = []
-        for i in range(source.shape[-1]):
+        for i in range(len(source)):
           self.output_dim_mapping["Sequential"][name].append(sequential_output_index)
           sequential_output_index += 1
 
     self.num_global = global_output_index
     self.num_sequential = sequential_output_index
     self.nMaxJet = options.nMaxJet - num_global_entry
+
   def logsnr_schedule_cosine(self, time: Tensor, logsnr_min: float = -20., logsnr_max: float = 20.) -> Tensor:
     logsnr_min = Tensor([logsnr_min]).to(time.device)
     logsnr_max = Tensor([logsnr_max]).to(time.device)
@@ -66,13 +64,13 @@ class Diffusion_Sampler():
 
     return logsnr, alpha, sigma
 
-  def add_perturbation(self, sources: Tuple[Source, ...], source_time: Tensor, diffusion_type: InputType) -> Tuple[Tuple[Source, ...], Tuple[Source, ...]]:
+  def add_perturbation(self, sources: Tuple[Source, ...], source_time: Tensor, diffusion_type: InputType, normalizers: nn.ModuleList) -> Tuple[Tuple[Source, ...], Tuple[Source, ...]]:
       logsnr, alpha, sigma = self.get_logsnr_alpha_sigma(source_time.unsqueeze(-1))
       output_sources = []
       output_vectors = []
       for input_index, name in enumerate(self.input_types):
         source_before_norm, mask = sources[input_index]
-        source = (source_before_norm - self.mean[name].to(source_before_norm.device)) / self.std[name].to(source_before_norm.device) * (mask.unsqueeze(-1).float())
+        source = normalizers[input_index](source_before_norm, mask)
 
         if (self.input_types[name] == diffusion_type):
           eps = torch.randn(source.size(), device = source.device, dtype = torch.float32)
@@ -91,16 +89,17 @@ class Diffusion_Sampler():
 
       return tuple(output_sources), tuple(output_vectors)
 
-  def add_perturbation_dict(self, source: Dict[str, Tensor], source_time: Tensor):
+  def add_perturbation_dict(self, source: Dict[str, Tensor], source_time: Tensor, normalizers: nn.ModuleList):
       logsnr, alpha, sigma = self.get_logsnr_alpha_sigma(source_time.unsqueeze(-1))
       perturbed_source = OrderedDict()
       score            = OrderedDict()
-      for name, source in source.items():
-        source_reshaped = source.view(source.shape[0], 1, 1).contiguous()
-        source_reshaped = (source_reshaped - self.mean_num_vector[name].to(source.device)) / self.std_num_vector[name].to(source.device) 
+      for input_index, name in enumerate(source):
+        source_ = source[name]
+        source_reshaped = source_.view(source_.shape[0], 1, 1).contiguous()
+        source_reshaped = normalizers[input_index](source_reshaped, torch.ones((source_.shape[0],1), device = source_.device))
         eps = torch.randn(source_reshaped.size(), device = source_reshaped.device, dtype = torch.float32)
-        perturbed_source[name] = (alpha * source_reshaped + eps * sigma).view(source.size())
-        score[name] = (eps * alpha - source_reshaped * sigma).view(source.size())
+        perturbed_source[name] = (alpha * source_reshaped + eps * sigma).view(source_.size())
+        score[name] = (eps * alpha - source_reshaped * sigma).view(source_.size())
       return perturbed_source, score
 
 
@@ -222,7 +221,7 @@ class Diffusion_Sampler():
 
 
 
-  def generate(self, model, batch_size, num_steps = 100, device = 'cpu'):
+  def generate(self, model, batch_size, normlizers, normalizers_num_vector, num_steps = 100, device = 'cpu'):
 
     model = model.to(device)
 
@@ -235,25 +234,29 @@ class Diffusion_Sampler():
     # Prepare prior distribution for sequential result
     source_num_vector = OrderedDict()
     sources           = []
-    for name, mean in self.mean.items():
+
+    num_vector_index = 0
+    for name, input_feature in self.input_features.items():
       if (self.input_types[name] == InputType.Global):
         data = Generated_Feature_Global[name]
         mask = torch.ones((batch_size, 1), device = device)
         sources.append(Source(data, mask))
       else:
-        num_vector = (self.std_num_vector[name] * Generated_Feature_Global[name].data) + self.mean_num_vector[name]
+        num_vector = normalizers_num_vector[num_vector_index](Generated_Feature_Global[name].data, Generated_Feature_Global[name].mask)
         num_vector = torch.floor(num_vector + 0.5)
         num_vector = num_vector.view(batch_size, 1)
         source_num_vector[name] = num_vector
 
-        data = self.prior_sde((batch_size, self.nMaxJet, mean.shape[-1]), device = device) # TODO, change T
+        data = self.prior_sde((batch_size, self.nMaxJet, len(input_feature)), device = device)
         mask = self.create_mask_from_nJet(source_num_vector[name], self.nMaxJet)
         data = data * mask.unsqueeze(-1).float()
         sources.append(Source(data, mask))
+        num_vector_index += 1
+
     sources = tuple(sources)
 
     # Diffuse Sequential Result
-    generated_sequential_features = self.DDPMSampler_sequential(model, sources, source_num_vector, batch_size, num_steps = num_steps)
+    generated_sequential_features = self.DDPMSampler_sequential(model, sources, source_num_vector, batch_size, num_steps = num_steps, device = device)
 
     Generated_Feature_Sequential = DistributionInfo()
 
@@ -264,30 +267,35 @@ class Diffusion_Sampler():
       data = data * mask.unsqueeze(-1).float()
       Generated_Feature_Sequential[name] = Source(data, mask)
 
-    return self.denormalizer(Generated_Feature_Global, Generated_Feature_Sequential)
+    return self.denormalizer(Generated_Feature_Global, Generated_Feature_Sequential,  normlizers, normalizers_num_vector)
 
-  def denormalizer(self, Generated_Feature_Global, Generated_Feature_Sequential):
+  def denormalizer(self, Generated_Feature_Global, Generated_Feature_Sequential, normlizers, normalizers_num_vector):
+
     Generated_Feature_before_norm = OrderedDict()
 
-    for name, mean in self.mean_num_vector.items():
-      source, mask = Generated_Feature_Global[name]
-      source_before_norm = self.std_num_vector[name] * source + self.mean_num_vector[name]
-      source_int = torch.floor(source_before_norm + 0.5)
-      Generated_Feature_before_norm["num_" + name] = Source(source_int, mask)
+    num_vector_index = 0
+    for name, input_type in self.input_types.items():
+      if (input_type == InputType.Sequential): 
+        source, mask = Generated_Feature_Global[name]
+        source_before_norm = normalizers_num_vector[num_vector_index].denormalize(source, mask)
+        source_int = torch.floor(source_before_norm + 0.5)
+        Generated_Feature_before_norm["num_" + name] = Source(source_int, mask)
+        num_vector_index += 1
 
-    for name, mean in self.mean.items():
+    for input_index, name in enumerate(self.input_features):
+      input_feature = self.input_features[name]
       if (self.input_types[name] == InputType.Global):
         source, mask = Generated_Feature_Global[name]
-        source_before_norm = self.std[name] * source + self.mean[name]
+        source_before_norm = normalizers[input_index].denormalize(source, mask)
       else:
         source, mask = Generated_Feature_Sequential[name]
-        source_before_norm = self.std[name] * source + self.mean[name]
+        source_before_norm = normalizers[input_index].denormalize(source, mask)
    
-      for dim_ in range(mean.shape[-1]):
+      for dim_ in range(len(input_feature)):
         if not (self.input_features[name][dim_].normalize): # TODO: normally it means that the input is integer
           source_before_norm[..., dim_] = torch.floor(source_before_norm[..., dim_] + 0.5)
-
       Generated_Feature_before_norm[name] = Source(source_before_norm, mask)
+
     return Generated_Feature_before_norm
 
   def second_order_correction_sequential(self, time_step,
