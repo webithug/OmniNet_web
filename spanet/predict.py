@@ -71,13 +71,14 @@ def main(log_directory: str,
          batch_size: Optional[int],
          output_vectors: bool,
          gpu: bool,
-         fp16: bool):
+         fp16: bool,
+         num_generate_vectors = int):
     model = load_model(log_directory, test_file, event_file, batch_size, gpu, fp16=fp16)
 
     if output_vectors:
-        evaluation, full_outputs = evaluate_on_test_dataset(model, return_full_output=True, fp16=fp16)
+        evaluation, full_outputs = evaluate_on_test_dataset(model, return_full_output=True, fp16=fp16, num_generate_vectors = num_generate_vectors)
     else:
-        evaluation = evaluate_on_test_dataset(model, return_full_output=False, fp16=fp16)
+        evaluation = evaluate_on_test_dataset(model, return_full_output=False, fp16=fp16, num_generate_vectors = num_generate_vectors)
         full_outputs = None
 
     create_hdf5_output(output_file, model.testing_dataset, evaluation, full_outputs)
@@ -109,6 +110,9 @@ if __name__ == '__main__':
 
     parser.add_argument("-v", "--output_vectors", action="store_true",
                         help="Include embedding vectors in output in an additional section of the HDF5.")
+
+    parser.add_argument("--num_generate_vectors", type=int, default = 0,
+                        help="Number of generated vectors using diffusion model.")
 
     arguments = parser.parse_args()
     main(**arguments.__dict__)
