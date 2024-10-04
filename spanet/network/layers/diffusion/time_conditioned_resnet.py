@@ -1,9 +1,9 @@
 import torch
 from torch import nn, Tensor
-from spanet.network.layers.linear_block.regularization import StochasticDepth, LayerScale
+from omninet.network.layers.linear_block.regularization import StochasticDepth, LayerScale
 
-from spanet.network.layers.embedding.time_embedding import FourierProjection
-from spanet.options import Options
+from omninet.network.layers.embedding.time_embedding import FourierProjection
+from omninet.options import Options
 
 
 class ResNetDense(nn.Module):

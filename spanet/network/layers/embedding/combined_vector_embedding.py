@@ -2,16 +2,16 @@ from typing import Tuple
 
 from torch import Tensor, nn
 
-from spanet.options import Options
-from spanet.dataset.types import InputType
-from spanet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
+from omninet.options import Options
+from omninet.dataset.types import InputType
+from omninet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
 
-from spanet.network.layers.embedding.normalizer import Normalizer
-from spanet.network.layers.embedding.position_embedding import PositionEmbedding
-from spanet.network.layers.embedding.global_vector_embedding import GlobalVectorEmbedding
-from spanet.network.layers.embedding.relative_vector_embedding import RelativeVectorEmbedding
-from spanet.network.layers.embedding.sequential_vector_embedding import SequentialVectorEmbedding
-from spanet.network.layers.embedding.PET_embedding import PointEdgeTransformerEmbedding
+from omninet.network.layers.embedding.normalizer import Normalizer
+from omninet.network.layers.embedding.position_embedding import PositionEmbedding
+from omninet.network.layers.embedding.global_vector_embedding import GlobalVectorEmbedding
+from omninet.network.layers.embedding.relative_vector_embedding import RelativeVectorEmbedding
+from omninet.network.layers.embedding.sequential_vector_embedding import SequentialVectorEmbedding
+from omninet.network.layers.embedding.PET_embedding import PointEdgeTransformerEmbedding
 
 class CombinedVectorEmbedding(nn.Module):
     __constants__ = ["num_input_features"]
@@ -49,7 +49,7 @@ class CombinedVectorEmbedding(nn.Module):
 
     def forward(self, source_data: Tensor, source_time: Tensor, source_mask: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         # Normalize incoming vectors based on training statistics.
-        # source_data = self.normalizer(source_data, source_mask) # Normalization step changines to spanet.network.layers.diffusion.sampler.add_perturbation
+        # source_data = self.normalizer(source_data, source_mask) # Normalization step changines to omninet.network.layers.diffusion.sampler.add_perturbation
 
         # Embed each vector type into the same latent space.
         embeddings, padding_mask, sequence_mask, global_mask = self.vector_embeddings(source_data, source_time, source_mask)

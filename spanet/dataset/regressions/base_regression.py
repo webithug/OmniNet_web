@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from torch import Tensor
 
-from spanet.dataset.types import Statistics
+from omninet.dataset.types import Statistics
 
 class Regression(ABC):
     @staticmethod

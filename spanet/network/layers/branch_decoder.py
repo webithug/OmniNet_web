@@ -4,12 +4,12 @@ from opt_einsum import contract_expression
 import torch
 from torch import Tensor, nn, jit
 
-from spanet.options import Options
-from spanet.dataset.types import Symmetries
-from spanet.network.utilities import masked_log_softmax
-from spanet.network.layers.stacked_encoder import StackedEncoder
-from spanet.network.layers.branch_linear import BranchLinear
-from spanet.network.symmetric_attention import SymmetricAttentionSplit, SymmetricAttentionFull
+from omninet.options import Options
+from omninet.dataset.types import Symmetries
+from omninet.network.utilities import masked_log_softmax
+from omninet.network.layers.stacked_encoder import StackedEncoder
+from omninet.network.layers.branch_linear import BranchLinear
+from omninet.network.symmetric_attention import SymmetricAttentionSplit, SymmetricAttentionFull
 
 
 class BranchDecoder(nn.Module):

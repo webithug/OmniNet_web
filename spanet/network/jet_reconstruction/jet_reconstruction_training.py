@@ -5,11 +5,11 @@ import torch
 from torch import Tensor
 from torch.nn import functional as F
 
-from spanet.options import Options
-from spanet.dataset.types import Batch, Source, AssignmentTargets, DistributionInfo
-from spanet.dataset.regressions import regression_loss
-from spanet.network.jet_reconstruction.jet_reconstruction_network import JetReconstructionNetwork
-from spanet.network.utilities.divergence_losses import assignment_cross_entropy_loss, jensen_shannon_divergence
+from omninet.options import Options
+from omninet.dataset.types import Batch, Source, AssignmentTargets, DistributionInfo
+from omninet.dataset.regressions import regression_loss
+from omninet.network.jet_reconstruction.jet_reconstruction_network import JetReconstructionNetwork
+from omninet.network.utilities.divergence_losses import assignment_cross_entropy_loss, jensen_shannon_divergence
 
 
 def numpy_tensor_array(tensor_list):

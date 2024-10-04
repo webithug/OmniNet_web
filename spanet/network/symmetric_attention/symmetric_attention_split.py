@@ -5,11 +5,11 @@ import numpy as np
 import torch
 from torch import Tensor, nn
 
-from spanet.options import Options
-from spanet.network.layers.stacked_encoder import StackedEncoder
-from spanet.network.symmetric_attention.symmetric_attention_base import SymmetricAttentionBase
-from spanet.network.layers.linear_block.masking import create_masking
-from spanet.network.utilities.linear_form import create_symmetric_function
+from omninet.options import Options
+from omninet.network.layers.stacked_encoder import StackedEncoder
+from omninet.network.symmetric_attention.symmetric_attention_base import SymmetricAttentionBase
+from omninet.network.layers.linear_block.masking import create_masking
+from omninet.network.utilities.linear_form import create_symmetric_function
 
 
 # noinspection SpellCheckingInspection

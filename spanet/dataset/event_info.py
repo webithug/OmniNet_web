@@ -11,8 +11,8 @@ except ImportError:
     from yaml import Loader, Dumper
 import numpy as np
 
-from spanet.dataset.types import *
-from spanet.network.utilities.group_theory import (
+from omninet.dataset.types import *
+from omninet.network.utilities.group_theory import (
     power_set,
     complete_symbolic_symmetry_group,
     complete_symmetry_group,

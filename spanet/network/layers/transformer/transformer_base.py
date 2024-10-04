@@ -1,6 +1,6 @@
 from torch import Tensor, nn
 
-from spanet.options import Options
+from omninet.options import Options
 
 
 class TransformerBase(nn.Module):

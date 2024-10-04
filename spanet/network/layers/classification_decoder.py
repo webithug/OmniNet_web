@@ -3,9 +3,9 @@ from collections import OrderedDict
 
 from torch import Tensor, nn
 
-from spanet.options import Options
-from spanet.network.layers.branch_linear import MultiOutputBranchLinear, BranchLinear
-from spanet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
+from omninet.options import Options
+from omninet.network.layers.branch_linear import MultiOutputBranchLinear, BranchLinear
+from omninet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
 
 
 class ClassificationDecoder(nn.Module):

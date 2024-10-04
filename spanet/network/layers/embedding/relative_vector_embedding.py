@@ -4,9 +4,9 @@ import numpy as np
 import torch
 from torch import Tensor, nn
 
-from spanet.network.layers.embedding_stack import EmbeddingStack
-from spanet.network.layers.linear_block import create_linear_block
-from spanet.options import Options
+from omninet.network.layers.embedding_stack import EmbeddingStack
+from omninet.network.layers.linear_block import create_linear_block
+from omninet.options import Options
 
 
 class RelativeVectorEmbedding(nn.Module):

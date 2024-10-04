@@ -1,9 +1,9 @@
-from spanet.options import Options
+from omninet.options import Options
 
-from spanet.network.layers.transformer.transformer_base import TransformerBase
-from spanet.network.layers.transformer.gated_transformer import GatedTransformer
-from spanet.network.layers.transformer.standard_transformer import StandardTransformer
-from spanet.network.layers.transformer.norm_first_transformer import NormFirstTransformer
+from omninet.network.layers.transformer.transformer_base import TransformerBase
+from omninet.network.layers.transformer.gated_transformer import GatedTransformer
+from omninet.network.layers.transformer.standard_transformer import StandardTransformer
+from omninet.network.layers.transformer.norm_first_transformer import NormFirstTransformer
 
 
 def create_transformer(

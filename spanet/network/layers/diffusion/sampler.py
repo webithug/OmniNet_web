@@ -1,8 +1,8 @@
 import torch
 from torch import nn, Tensor
-from spanet.options import Options
-from spanet.dataset.types import InputType, Source, DistributionInfo, InputType, SourceTuple
-from spanet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
+from omninet.options import Options
+from omninet.dataset.types import InputType, Source, DistributionInfo, InputType, SourceTuple
+from omninet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
 from typing import List, Dict, Tuple, Optional
 from collections import OrderedDict
 from tqdm import tqdm

@@ -1,3 +1,3 @@
-from spanet.network.jet_reconstruction import JetReconstructionModel
-from spanet.dataset import JetReconstructionDataset
-from spanet.options import Options
+from omninet.network.jet_reconstruction import JetReconstructionModel
+from omninet.dataset import JetReconstructionDataset
+from omninet.options import Options

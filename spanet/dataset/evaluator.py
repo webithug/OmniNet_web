@@ -4,7 +4,7 @@ import warnings
 
 import numpy as np
 
-from spanet.dataset.event_info import EventInfo
+from omninet.dataset.event_info import EventInfo
 
 
 class SymmetricEvaluator:

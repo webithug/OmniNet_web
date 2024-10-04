@@ -1,9 +1,9 @@
 from typing import Type
 from torch import Tensor, nn
 
-from spanet.options import Options
-from spanet.network.layers.branch_linear import BranchLinear
-from spanet.dataset.regressions import Regression, regression_class
+from omninet.options import Options
+from omninet.network.layers.branch_linear import BranchLinear
+from omninet.dataset.regressions import Regression, regression_class
 
 
 class NormalizedBranchLinear(nn.Module):

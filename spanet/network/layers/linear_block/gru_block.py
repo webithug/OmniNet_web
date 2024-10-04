@@ -1,10 +1,10 @@
 import torch
 from torch import Tensor, nn
 
-from spanet.network.layers.linear_block.activations import create_activation, create_dropout, create_residual_connection
-from spanet.network.layers.linear_block.normalizations import create_normalization
-from spanet.network.layers.linear_block.masking import create_masking
-from spanet.options import Options
+from omninet.network.layers.linear_block.activations import create_activation, create_dropout, create_residual_connection
+from omninet.network.layers.linear_block.normalizations import create_normalization
+from omninet.network.layers.linear_block.masking import create_masking
+from omninet.options import Options
 
 
 class GRUGate(nn.Module):

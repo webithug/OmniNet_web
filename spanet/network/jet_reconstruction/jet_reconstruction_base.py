@@ -6,10 +6,10 @@ from torch import nn
 # noinspection PyProtectedMember
 from torch.utils.data import DataLoader
 
-from spanet.options import Options
-from spanet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
-from spanet.network.learning_rate_schedules import get_linear_schedule_with_warmup
-from spanet.network.learning_rate_schedules import get_cosine_with_hard_restarts_schedule_with_warmup
+from omninet.options import Options
+from omninet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
+from omninet.network.learning_rate_schedules import get_linear_schedule_with_warmup
+from omninet.network.learning_rate_schedules import get_cosine_with_hard_restarts_schedule_with_warmup
 
 
 class JetReconstructionBase(pl.LightningModule):

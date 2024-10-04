@@ -2,23 +2,23 @@ import numpy as np
 import torch
 from torch import nn, Tensor
 
-from spanet.options import Options
-from spanet.dataset.types import Tuple, Outputs, Source, Predictions, DistributionInfo, InputType
+from omninet.options import Options
+from omninet.dataset.types import Tuple, Outputs, Source, Predictions, DistributionInfo, InputType
 from typing import Dict
 
-from spanet.network.layers.vector_encoder import JetEncoder
-from spanet.network.layers.branch_decoder import BranchDecoder
-from spanet.network.layers.embedding import MultiInputVectorEmbedding
-from spanet.network.layers.embedding.local_embedding import LocalEmbedding
-from spanet.network.layers.regression_decoder import RegressionDecoder
-from spanet.network.layers.classification_decoder import ClassificationDecoder
-from spanet.network.layers.event_generation_decoder import EventGenerationDecoder
-from spanet.network.layers.jet_generation_decoder import JetGenerationDecoder
-from spanet.network.layers.embedding.normalizer import Normalizer
+from omninet.network.layers.vector_encoder import JetEncoder
+from omninet.network.layers.branch_decoder import BranchDecoder
+from omninet.network.layers.embedding import MultiInputVectorEmbedding
+from omninet.network.layers.embedding.local_embedding import LocalEmbedding
+from omninet.network.layers.regression_decoder import RegressionDecoder
+from omninet.network.layers.classification_decoder import ClassificationDecoder
+from omninet.network.layers.event_generation_decoder import EventGenerationDecoder
+from omninet.network.layers.jet_generation_decoder import JetGenerationDecoder
+from omninet.network.layers.embedding.normalizer import Normalizer
 
-from spanet.network.prediction_selection import extract_predictions
-from spanet.network.jet_reconstruction.jet_reconstruction_base import JetReconstructionBase
-from spanet.network.layers.diffusion.sampler import Diffusion_Sampler
+from omninet.network.prediction_selection import extract_predictions
+from omninet.network.jet_reconstruction.jet_reconstruction_base import JetReconstructionBase
+from omninet.network.layers.diffusion.sampler import Diffusion_Sampler
 from collections import OrderedDict
 TArray = np.ndarray
 

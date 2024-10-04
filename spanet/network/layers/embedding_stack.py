@@ -2,9 +2,9 @@ from typing import List
 
 from torch import Tensor, nn
 
-from spanet.options import Options
-from spanet.network.layers.linear_block.basic_block import BasicBlock
-from spanet.network.layers.linear_block import create_linear_block
+from omninet.options import Options
+from omninet.network.layers.linear_block.basic_block import BasicBlock
+from omninet.network.layers.linear_block import create_linear_block
 
 
 class EmbeddingStack(nn.Module):

@@ -1,9 +1,9 @@
 from typing import Optional
 from sherpa import Client, Trial
 
-from spanet.options import Options
-from spanet.network.jet_reconstruction.jet_reconstruction_training import JetReconstructionTraining
-from spanet.network.jet_reconstruction.jet_reconstruction_validation import JetReconstructionValidation
+from omninet.options import Options
+from omninet.network.jet_reconstruction.jet_reconstruction_training import JetReconstructionTraining
+from omninet.network.jet_reconstruction.jet_reconstruction_validation import JetReconstructionValidation
 
 
 class SherpaNetwork(JetReconstructionTraining, JetReconstructionValidation):

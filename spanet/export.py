@@ -7,9 +7,9 @@ from torch.utils._pytree import tree_map
 
 import pytorch_lightning as pl
 
-from spanet import JetReconstructionModel
-from spanet.dataset.types import Source
-from spanet.evaluation import load_model
+from omninet import JetReconstructionModel
+from omninet.dataset.types import Source
+from omninet.evaluation import load_model
 
 
 class WrappedModel(pl.LightningModule):

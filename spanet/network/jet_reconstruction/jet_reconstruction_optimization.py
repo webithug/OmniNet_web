@@ -6,8 +6,8 @@ from torch import Tensor
 from torch.autograd.functional import _construct_standard_basis_for, _autograd_grad, _grad_postprocess, \
     _tuple_postprocess, _as_tuple, _check_requires_grad
 
-from spanet.network.jet_reconstruction.jet_reconstruction_network import JetReconstructionNetwork
-from spanet.options import Options
+from omninet.network.jet_reconstruction.jet_reconstruction_network import JetReconstructionNetwork
+from omninet.options import Options
 
 
 class JetReconstructionOptimization(JetReconstructionNetwork):

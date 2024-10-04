@@ -1,1 +1,1 @@
-from spanet.network.layers.embedding.multi_input_vector_embedding import MultiInputVectorEmbedding
+from omninet.network.layers.embedding.multi_input_vector_embedding import MultiInputVectorEmbedding

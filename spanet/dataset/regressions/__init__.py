@@ -1,11 +1,11 @@
 from typing import List, Dict, Type, Callable
 from torch import Tensor
 
-from spanet.dataset.regressions.base_regression import Regression
-from spanet.dataset.types import Statistics
-from spanet.dataset.regressions.gaussian_regression import GaussianRegression
-from spanet.dataset.regressions.laplacian_regression import LaplacianRegression
-from spanet.dataset.regressions.log_gaussian_regression import LogGaussianRegression
+from omninet.dataset.regressions.base_regression import Regression
+from omninet.dataset.types import Statistics
+from omninet.dataset.regressions.gaussian_regression import GaussianRegression
+from omninet.dataset.regressions.laplacian_regression import LaplacianRegression
+from omninet.dataset.regressions.log_gaussian_regression import LogGaussianRegression
 
 
 all_regressions: List[Type[Regression]] = [

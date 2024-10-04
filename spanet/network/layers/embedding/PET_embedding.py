@@ -4,12 +4,12 @@ import torch
 from torch import Tensor, nn
 import torch.nn.functional as F
 
-from spanet.network.layers.embedding_stack import EmbeddingStack
-from spanet.options import Options
-from spanet.network.layers.embedding.local_embedding import LocalEmbedding
-from spanet.network.layers.linear_block.masking import create_masking
-from spanet.network.layers.transformer.PET_transformer import PointEdgeTransformer
-from spanet.network.layers.embedding.time_embedding import FourierProjection
+from omninet.network.layers.embedding_stack import EmbeddingStack
+from omninet.options import Options
+from omninet.network.layers.embedding.local_embedding import LocalEmbedding
+from omninet.network.layers.linear_block.masking import create_masking
+from omninet.network.layers.transformer.PET_transformer import PointEdgeTransformer
+from omninet.network.layers.embedding.time_embedding import FourierProjection
 
 class PointEdgeTransformerEmbedding(nn.Module):
     __constants__ = ["input_dim", "mask_sequence_vectors"]

@@ -23,7 +23,7 @@ from pytorch_lightning.callbacks import (
     Callback
 )
 
-from spanet import JetReconstructionModel, Options
+from omninet import JetReconstructionModel, Options
 
 
 class GradientAndParameterMonitor(Callback):
@@ -235,7 +235,7 @@ if __name__ == '__main__':
     parser.add_argument("-l", "--log_dir", type=str, default=None,
                         help="Output directory for the checkpoints and tensorboard logs. Default to current directory.")
 
-    parser.add_argument("-n", "--name", type=str, default="spanet_output",
+    parser.add_argument("-n", "--name", type=str, default="omninet_output",
                         help="The sub-directory to create for this run and an identifier for WANDB.")
 
     parser.add_argument("-e", "--epochs", type=int, default=None,

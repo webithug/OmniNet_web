@@ -7,10 +7,10 @@ from argparse import ArgumentParser
 import numpy as np
 from numpy.typing import ArrayLike
 
-from spanet.dataset.evaluator import SymmetricEvaluator, EventInfo
-from spanet.evaluation import evaluate_on_test_dataset, load_model
-from spanet.dataset.types import Evaluation
-from spanet.util.plotter import plot_and_save_histograms, plot_and_save_comparison_histograms
+from omninet.dataset.evaluator import SymmetricEvaluator, EventInfo
+from omninet.evaluation import evaluate_on_test_dataset, load_model
+from omninet.dataset.types import Evaluation
+from omninet.util.plotter import plot_and_save_histograms, plot_and_save_comparison_histograms
 
 def formatter(value: Any) -> str:
     """ A monolithic formatter function to convert possible values to output strings.

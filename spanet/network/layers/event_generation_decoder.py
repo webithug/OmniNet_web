@@ -4,11 +4,11 @@ from collections import OrderedDict
 import torch
 from torch import Tensor, nn
 
-from spanet.options import Options
-from spanet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
-from spanet.network.layers.embedding.normalizer import Normalizer
-from spanet.network.layers.diffusion.time_conditioned_resnet import TimeConditionedResNet
-from spanet.dataset.types import InputType, Source, DistributionInfo
+from omninet.options import Options
+from omninet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
+from omninet.network.layers.embedding.normalizer import Normalizer
+from omninet.network.layers.diffusion.time_conditioned_resnet import TimeConditionedResNet
+from omninet.dataset.types import InputType, Source, DistributionInfo
 
 class EventGenerationDecoder(nn.Module):
 
