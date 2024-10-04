@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor
 
-from spanet.dataset.regressions.base_regression import Regression, Statistics
+from omninet.dataset.regressions.base_regression import Regression, Statistics
 
 
 class LaplacianRegression(Regression):

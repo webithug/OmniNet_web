@@ -7,9 +7,9 @@ from torch.utils._pytree import tree_flatten, tree_unflatten, tree_map
 
 from rich import progress
 
-from spanet import JetReconstructionModel, Options
-from spanet.dataset.types import Evaluation, Outputs, Source
-from spanet.network.jet_reconstruction.jet_reconstruction_network import extract_predictions
+from omninet import JetReconstructionModel, Options
+from omninet.dataset.types import Evaluation, Outputs, Source
+from omninet.network.jet_reconstruction.jet_reconstruction_network import extract_predictions
 
 from collections import defaultdict
 

@@ -1,8 +1,8 @@
 import torch
 from torch import Tensor, nn
 
-from spanet.options import Options
-from spanet.network.layers.linear_stack import create_linear_stack
+from omninet.options import Options
+from omninet.network.layers.linear_stack import create_linear_stack
 
 
 class BranchLinear(nn.Module):

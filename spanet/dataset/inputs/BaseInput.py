@@ -4,8 +4,8 @@ import h5py
 
 import numpy as np
 
-from spanet.dataset.event_info import EventInfo
-from spanet.dataset.types import Statistics, Source
+from omninet.dataset.event_info import EventInfo
+from omninet.dataset.types import Statistics, Source
 
 
 class BaseInput(ABC):

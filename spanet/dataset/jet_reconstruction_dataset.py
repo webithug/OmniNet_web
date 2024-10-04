@@ -9,11 +9,11 @@ import torch
 from torch import Tensor
 from torch.utils.data import Dataset
 
-from spanet.dataset.types import SpecialKey, NDArray, Batch, AssignmentTargets, Source, ArrayLike
-from spanet.dataset.event_info import EventInfo
-from spanet.dataset.inputs import create_source_input
-from spanet.dataset.types import InputType
-from spanet.dataset.regressions import regression_statistics
+from omninet.dataset.types import SpecialKey, NDArray, Batch, AssignmentTargets, Source, ArrayLike
+from omninet.dataset.event_info import EventInfo
+from omninet.dataset.inputs import create_source_input
+from omninet.dataset.types import InputType
+from omninet.dataset.regressions import regression_statistics
 
 # The possible types for the limit index parameter.
 TLimitIndex = Union[

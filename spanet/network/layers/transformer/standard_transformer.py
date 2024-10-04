@@ -1,8 +1,8 @@
 from torch import Tensor, nn
 
-from spanet.options import Options
-from spanet.network.layers.linear_block.masking import create_masking
-from spanet.network.layers.transformer.transformer_base import TransformerBase
+from omninet.options import Options
+from omninet.network.layers.linear_block.masking import create_masking
+from omninet.network.layers.transformer.transformer_base import TransformerBase
 
 
 class StandardTransformer(TransformerBase):

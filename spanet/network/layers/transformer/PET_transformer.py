@@ -2,9 +2,9 @@ import torch
 from torch import nn, Tensor
 import torch.nn.functional as F
 
-from spanet.options import Options
-from spanet.network.layers.linear_block.masking import create_masking
-from spanet.network.layers.linear_block.regularization import StochasticDepth, LayerScale
+from omninet.options import Options
+from omninet.network.layers.linear_block.masking import create_masking
+from omninet.network.layers.linear_block.regularization import StochasticDepth, LayerScale
 
 
 class PointEdgeTransformerBlock(nn.Module):

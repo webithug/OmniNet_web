@@ -1,8 +1,8 @@
 from torch import Tensor, nn
 import torch
-from spanet.options import Options
-from spanet.network.layers.linear_block.masking import create_masking
-from spanet.dataset.types import InputType
+from omninet.options import Options
+from omninet.network.layers.linear_block.masking import create_masking
+from omninet.dataset.types import InputType
 
 
 class LocalEmbedBlock(nn.Module):

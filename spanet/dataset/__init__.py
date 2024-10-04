@@ -1,2 +1,2 @@
-from spanet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
-from spanet.dataset.event_info import EventInfo
+from omninet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
+from omninet.dataset.event_info import EventInfo

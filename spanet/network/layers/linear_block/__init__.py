@@ -1,8 +1,8 @@
-from spanet.options import Options
-from spanet.network.layers.linear_block.gru_block import GRUBlock
-from spanet.network.layers.linear_block.basic_block import BasicBlock
-from spanet.network.layers.linear_block.gated_block import GatedBlock
-from spanet.network.layers.linear_block.resnet_block import ResNetBlock
+from omninet.options import Options
+from omninet.network.layers.linear_block.gru_block import GRUBlock
+from omninet.network.layers.linear_block.basic_block import BasicBlock
+from omninet.network.layers.linear_block.gated_block import GatedBlock
+from omninet.network.layers.linear_block.resnet_block import ResNetBlock
 
 
 def create_linear_block(

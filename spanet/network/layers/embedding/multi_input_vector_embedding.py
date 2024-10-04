@@ -3,11 +3,11 @@ from typing import List, Tuple
 import torch
 from torch import nn, Tensor
 
-from spanet.options import Options
-from spanet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
+from omninet.options import Options
+from omninet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
 
-from spanet.network.layers.linear_block import create_linear_block
-from spanet.network.layers.embedding.combined_vector_embedding import CombinedVectorEmbedding
+from omninet.network.layers.linear_block import create_linear_block
+from omninet.network.layers.embedding.combined_vector_embedding import CombinedVectorEmbedding
 
 
 class MultiInputVectorEmbedding(nn.Module):

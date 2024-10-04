@@ -3,7 +3,7 @@ from typing import List, Tuple, Union
 
 from sympy.combinatorics import Permutation as SymbolicPermutation
 
-from spanet.dataset.types import (
+from omninet.dataset.types import (
     Permutation,
     Permutations,
     MappedPermutation,

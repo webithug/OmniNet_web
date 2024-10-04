@@ -1,1 +1,1 @@
-from spanet.network.jet_reconstruction import JetReconstructionModel
+from omninet.network.jet_reconstruction import JetReconstructionModel

@@ -7,9 +7,9 @@ import numpy as np
 import torch
 from torch import Tensor, nn
 
-from spanet.network.symmetric_attention.symmetric_attention_base import SymmetricAttentionBase
-from spanet.network.utilities.linear_form import contract_linear_form, symmetric_tensor
-from spanet.options import Options
+from omninet.network.symmetric_attention.symmetric_attention_base import SymmetricAttentionBase
+from omninet.network.utilities.linear_form import contract_linear_form, symmetric_tensor
+from omninet.options import Options
 
 
 # noinspection SpellCheckingInspection

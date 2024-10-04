@@ -1,8 +1,8 @@
 from torch import Tensor, nn, jit
 
-from spanet.options import Options
-from spanet.network.layers.linear_block.gru_block import GRUGate, GRUBlock
-from spanet.network.layers.transformer.transformer_base import TransformerBase
+from omninet.options import Options
+from omninet.network.layers.linear_block.gru_block import GRUGate, GRUBlock
+from omninet.network.layers.transformer.transformer_base import TransformerBase
 
 
 class GTrXL(nn.Module):

@@ -3,11 +3,11 @@ from typing import Tuple
 import torch
 from torch import Tensor, nn
 
-from spanet.options import Options
-from spanet.network.layers.linear_stack import create_linear_stack
-from spanet.network.layers.transformer.PET_transformer import PointEdgeTransformer
-from spanet.network.layers.embedding.time_embedding import FourierProjection
-from spanet.network.layers.linear_block.masking import create_masking
+from omninet.options import Options
+from omninet.network.layers.linear_stack import create_linear_stack
+from omninet.network.layers.transformer.PET_transformer import PointEdgeTransformer
+from omninet.network.layers.embedding.time_embedding import FourierProjection
+from omninet.network.layers.linear_block.masking import create_masking
 
 class JetGenerationDecoder(nn.Module):
   def __init__(self, options: Options, input_dim: int):

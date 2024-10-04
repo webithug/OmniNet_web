@@ -3,10 +3,10 @@ from collections import OrderedDict
 
 from torch import Tensor, nn
 
-from spanet.options import Options
-from spanet.dataset.regressions import regression_class
-from spanet.network.layers.branch_linear import NormalizedBranchLinear
-from spanet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
+from omninet.options import Options
+from omninet.dataset.regressions import regression_class
+from omninet.network.layers.branch_linear import NormalizedBranchLinear
+from omninet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
 
 
 class RegressionDecoder(nn.Module):

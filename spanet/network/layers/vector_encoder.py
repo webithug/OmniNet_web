@@ -1,5 +1,5 @@
-from spanet.options import Options
-from spanet.network.layers.stacked_encoder import StackedEncoder
+from omninet.options import Options
+from omninet.network.layers.stacked_encoder import StackedEncoder
 
 
 class JetEncoder(StackedEncoder):

@@ -2,8 +2,8 @@ from typing import Tuple
 
 from torch import Tensor, nn
 
-from spanet.network.layers.embedding.sequential_vector_embedding import SequentialVectorEmbedding
-from spanet.options import Options
+from omninet.network.layers.embedding.sequential_vector_embedding import SequentialVectorEmbedding
+from omninet.options import Options
 
 
 class GlobalVectorEmbedding(nn.Module):

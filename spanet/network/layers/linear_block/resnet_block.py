@@ -1,10 +1,10 @@
 from typing import Optional
 from torch import Tensor, nn, jit
 
-from spanet.options import Options
-from spanet.network.layers.linear_block.normalizations import create_normalization
-from spanet.network.layers.linear_block.activations import create_activation, create_dropout
-from spanet.network.layers.linear_block.masking import create_masking
+from omninet.options import Options
+from omninet.network.layers.linear_block.normalizations import create_normalization
+from omninet.network.layers.linear_block.activations import create_activation, create_dropout
+from omninet.network.layers.linear_block.masking import create_masking
 
 
 class NormalizationFirstBlock(nn.Module):

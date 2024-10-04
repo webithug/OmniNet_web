@@ -1,8 +1,8 @@
 from typing import List
 from torch import Tensor, nn
 
-from spanet.options import Options
-from spanet.network.layers.branch_linear import BranchLinear
+from omninet.options import Options
+from omninet.network.layers.branch_linear import BranchLinear
 
 
 class MultiOutputBranchLinear(nn.Module):

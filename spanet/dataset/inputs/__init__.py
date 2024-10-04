@@ -1,13 +1,13 @@
 import h5py
 import numpy as np
 
-from spanet.dataset.event_info import EventInfo
+from omninet.dataset.event_info import EventInfo
 
-from spanet.dataset.types import InputType
-from spanet.dataset.inputs.BaseInput import BaseInput
-from spanet.dataset.inputs.GlobalInput import GlobalInput
-from spanet.dataset.inputs.RelativeInput import RelativeInput
-from spanet.dataset.inputs.SequentialInput import SequentialInput
+from omninet.dataset.types import InputType
+from omninet.dataset.inputs.BaseInput import BaseInput
+from omninet.dataset.inputs.GlobalInput import GlobalInput
+from omninet.dataset.inputs.RelativeInput import RelativeInput
+from omninet.dataset.inputs.SequentialInput import SequentialInput
 
 
 def create_source_input(

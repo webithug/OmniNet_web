@@ -1,7 +1,7 @@
 from torch import nn, Tensor
 
-from spanet.options import Options
-from spanet.network.layers.linear_block import create_linear_block
+from omninet.options import Options
+from omninet.network.layers.linear_block import create_linear_block
 
 
 class LinearStack(nn.Module):

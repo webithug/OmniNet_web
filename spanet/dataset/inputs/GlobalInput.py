@@ -6,8 +6,8 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from spanet.dataset.types import SpecialKey, Statistics, Source
-from spanet.dataset.inputs.BaseInput import BaseInput
+from omninet.dataset.types import SpecialKey, Statistics, Source
+from omninet.dataset.inputs.BaseInput import BaseInput
 
 class GlobalInput(BaseInput):
 

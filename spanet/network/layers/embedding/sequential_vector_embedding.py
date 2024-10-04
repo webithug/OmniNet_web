@@ -3,8 +3,8 @@ from typing import Tuple
 import torch
 from torch import Tensor, nn
 
-from spanet.network.layers.embedding_stack import EmbeddingStack
-from spanet.options import Options
+from omninet.network.layers.embedding_stack import EmbeddingStack
+from omninet.options import Options
 
 class SequentialVectorEmbedding(nn.Module):
     __constants__ = ["input_dim", "mask_sequence_vectors"]

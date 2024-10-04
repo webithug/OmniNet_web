@@ -3,8 +3,8 @@ from typing import List, Tuple
 import torch
 from torch import nn
 
-from spanet.options import Options
-from spanet.network.utilities.group_theory import complete_indices, symmetry_group
+from omninet.options import Options
+from omninet.network.utilities.group_theory import complete_indices, symmetry_group
 
 
 # noinspection SpellCheckingInspection

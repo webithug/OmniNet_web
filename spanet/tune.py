@@ -12,7 +12,7 @@ import json
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 
-from spanet import JetReconstructionModel, Options
+from omninet import JetReconstructionModel, Options
 import json
 try:
     import ray
@@ -45,7 +45,7 @@ DEFAULT_CONFIG = {
     "l2_penalty": tune.loguniform(1e-6, 1e-2)
 }
 
-def spanet_trial(config, base_options_file: str, home_dir: str, num_epochs=10, gpus_per_trial: int = 0):
+def omninet_trial(config, base_options_file: str, home_dir: str, num_epochs=10, gpus_per_trial: int = 0):
     if not os.path.isabs(base_options_file):
         base_options_file = f"{home_dir}/{base_options_file}"
 
@@ -98,14 +98,14 @@ def spanet_trial(config, base_options_file: str, home_dir: str, num_epochs=10, g
     trainer.fit(model)
 
 
-def tune_spanet(
+def tune_omninet(
     base_options_file: str, 
     search_space_file: Optional[str] = None,
     num_trials: int = 10, 
     num_epochs: int = 10, 
     gpus_per_trial: int = 0,
-    name: str = "spanet_asha_tune",
-    log_dir: str = "spanet_output",
+    name: str = "omninet_asha_tune",
+    log_dir: str = "omninet_output",
     config_out: str = "best_config.json"
 ):
     # Load the search space. 
@@ -133,7 +133,7 @@ def tune_spanet(
     )
 
     train_fn_with_parameters = tune.with_parameters(
-        spanet_trial,
+        omninet_trial,
         base_options_file=base_options_file,
         home_dir=os.getcwd(),
         num_epochs=num_epochs,
@@ -205,16 +205,16 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        "-l", "--log_dir", type=str, default="spanet_output",
+        "-l", "--log_dir", type=str, default="omninet_output",
         help="Output directory for all trials.")
 
     parser.add_argument(
-        "-n", "--name", type=str, default="spanet_asha_tune",
+        "-n", "--name", type=str, default="omninet_asha_tune",
         help="The sub-directory to create for this run.")
 
     parser.add_argument(
         "-o", "--config_out", type=str, default="best_config.json",
-        help = "spanet best configuration output")
+        help = "omninet best configuration output")
 
-    tune_spanet(**parser.parse_args().__dict__)
+    tune_omninet(**parser.parse_args().__dict__)
 

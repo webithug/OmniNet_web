@@ -4,9 +4,9 @@ from numpy import ndarray as Array
 
 import h5py
 
-from spanet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
-from spanet.dataset.types import Evaluation, SpecialKey, Outputs
-from spanet.evaluation import evaluate_on_test_dataset, load_model
+from omninet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
+from omninet.dataset.types import Evaluation, SpecialKey, Outputs
+from omninet.evaluation import evaluate_on_test_dataset, load_model
 
 
 def create_hdf5_output(

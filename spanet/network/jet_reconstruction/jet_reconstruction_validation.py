@@ -6,9 +6,9 @@ import torch
 
 from sklearn import metrics as sk_metrics
 
-from spanet.options import Options
-from spanet.dataset.evaluator import SymmetricEvaluator
-from spanet.network.jet_reconstruction.jet_reconstruction_network import JetReconstructionNetwork
+from omninet.options import Options
+from omninet.dataset.evaluator import SymmetricEvaluator
+from omninet.network.jet_reconstruction.jet_reconstruction_network import JetReconstructionNetwork
 import wandb
 
 class JetReconstructionValidation(JetReconstructionNetwork):
