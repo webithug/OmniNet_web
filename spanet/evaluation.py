@@ -84,7 +84,8 @@ def evaluate_on_test_dataset(
         model: JetReconstructionModel,
         progress=progress,
         return_full_output: bool = False,
-        fp16: bool = False
+        fp16: bool = False,
+        num_generate_vectors: int = 0,
 ) -> Union[Evaluation, Tuple[Evaluation, Outputs]]:
     full_assignments = defaultdict(list)
     full_assignment_probabilities = defaultdict(list)
@@ -102,40 +103,46 @@ def evaluate_on_test_dataset(
     if progress:
         dataloader = progress.track(model.test_dataloader(), description="Evaluating Model")
 
+
+    num_generated_vectors = 0
     for batch in dataloader:
         sources = tuple(Source(x[0].to(model.device), x[1].to(model.device)) for x in batch.sources)
         batch_size = sources[0].data.shape[0]
         source_time = torch.zeros((batch_size, 1)).to(model.device)
         with torch.cuda.amp.autocast(enabled=fp16):
             outputs = model.forward(sources, source_time, batch.num_sequential_vectors)
-            generated = model.generate(batch_size)
-            reference = model.get_reference_sample(sources, source_time, batch.num_sequential_vectors)
+            if num_generated_vectors < num_generate_vectors:
+              generated = model.generate(batch_size)
+              reference = model.get_reference_sample(sources, source_time, batch.num_sequential_vectors)
 
         generated_np = dict()
         reference_np = dict()
-        for key, source in generated.items():
-          data_gen, mask_gen = source
-          data_ref, mask_ref = reference[key]
 
-          mask_gen_dim = torch.flatten(mask_gen.bool()).detach().cpu().numpy()
-          mask_ref_dim = torch.flatten(mask_ref.bool()).detach().cpu().numpy()
+        if num_generated_vectors < num_generate_vectors:
+          for key, source in generated.items():
+            data_gen, mask_gen = source
+            data_ref, mask_ref = reference[key]
 
-          dim = data_gen.shape[-1]
-          for dim_ in range(dim):
-            data_gen_dim = torch.flatten(data_gen[..., dim_]).detach().cpu().numpy()
-            data_ref_dim = torch.flatten(data_ref[..., dim_]).detach().cpu().numpy()
-            data_gen_dim = data_gen_dim[mask_gen_dim]
-            data_ref_dim = data_ref_dim[mask_ref_dim]
-            if "num_" in key:
-              name = key
-            else:
-              feature = model.input_features[key][dim_]
-              name    = key + "_" + feature.name
-              if feature.log_scale:
-                name  = "log({})".format(name)
+            mask_gen_dim = torch.flatten(mask_gen.bool()).detach().cpu().numpy()
+            mask_ref_dim = torch.flatten(mask_ref.bool()).detach().cpu().numpy()
 
-            generated_np[name] = data_gen_dim
-            reference_np[name] = data_ref_dim
+            dim = data_gen.shape[-1]
+            for dim_ in range(dim):
+              data_gen_dim = torch.flatten(data_gen[..., dim_]).detach().cpu().numpy()
+              data_ref_dim = torch.flatten(data_ref[..., dim_]).detach().cpu().numpy()
+              data_gen_dim = data_gen_dim[mask_gen_dim]
+              data_ref_dim = data_ref_dim[mask_ref_dim]
+              if "num_" in key:
+                name = key
+              else:
+                feature = model.input_features[key][dim_]
+                name    = key + "_" + feature.name
+                if feature.log_scale:
+                  name  = "log({})".format(name)
+
+              generated_np[name] = data_gen_dim
+              reference_np[name] = data_ref_dim
+              num_generated_vectors += batch_size
     
         assignment_indices = extract_predictions([
             np.nan_to_num(assignment.detach().cpu().numpy(), -np.inf)
