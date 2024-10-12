@@ -3,8 +3,8 @@ import numpy as np
 
 
 # read yulei data
-yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_1/TTHadronics_87670000.h5'
-out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TTHadronics_87670000_omninet.h5'
+yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/TTHadronics_367772000.h5'
+out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TTHadronics_367772000_omninet_10jets.h5'
 
 # Open yulei generated file and my output file
 with h5py.File(yulei_file_path, 'r') as infile, h5py.File(out_file_path, 'w') as outfile:
@@ -52,10 +52,13 @@ with h5py.File(yulei_file_path, 'r') as infile, h5py.File(out_file_path, 'w') as
     genpart_PID = genpart_data[:,:,7]
     genmatched_index = genpart_data[:,:,-1]
 
+    # # temporary: for matched > 4, make it to -1
+    # genmatched_index[genmatched_index>4] = -1
+
     # loop over all events
     n_evt = genpart_data.shape[0]
 
-    # INPUT
+    # # INPUT
     jets_pt_data = []
     jets_eta_data = []
     jets_phi_data = []
@@ -63,7 +66,7 @@ with h5py.File(yulei_file_path, 'r') as infile, h5py.File(out_file_path, 'w') as
     jets_btag_data = []
     mask_data = []
 
-    # TARGET
+    # # TARGET
     t1_b_data = []
     t1_q1_data = []
     t1_q2_data = []
@@ -106,7 +109,7 @@ with h5py.File(yulei_file_path, 'r') as infile, h5py.File(out_file_path, 'w') as
             jets_phi_data.append(jets_data[evt,:,2])
             jets_mass_data.append(jets_data[evt,:,3])
             jets_btag_data.append(jets_data[evt,:,4])
-            mask_data.append(np.full((4), True, dtype='|b1'))
+            mask_data.append(np.full((10), True, dtype='|b1'))
 
             count+=1
 
