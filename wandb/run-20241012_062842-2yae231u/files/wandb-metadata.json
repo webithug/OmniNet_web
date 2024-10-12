@@ -1,0 +1,47 @@
+{
+  "os":  "Linux-5.14.21-150400.24.81_12.0.87-cray_shasta_c-x86_64-with-glibc2.31",
+  "python":  "3.10.15",
+  "startedAt":  "2024-10-12T13:28:42.665965Z",
+  "args":  [
+    "-of",
+    "/global/homes/w/weipow/OmniNet_web/omninet/processed_data_web/example_web.json",
+    "--gpus",
+    "0"
+  ],
+  "program":  "-m omninet.train",
+  "git":  {
+    "remote":  "https://github.com/webithug/OmniNet_web.git",
+    "commit":  "3f21d7c3689773705bbdf79c42261e507ac3c1a6"
+  },
+  "email":  "weber0205@gmail.com",
+  "root":  "/global/u2/w/weipow/OmniNet_web",
+  "host":  "login19",
+  "username":  "weipow",
+  "executable":  "/global/u2/w/weipow/OmniNet_web/environment/bin/python",
+  "cpu_count":  128,
+  "cpu_count_logical":  256,
+  "gpu":  "[NVIDIA A100-PCIE-40GB]",
+  "gpu_count":  1,
+  "disk":  {
+    "/":  {
+      "total":  "270120112128",
+      "used":  "1474297856"
+    }
+  },
+  "memory":  {
+    "total":  "540240224256"
+  },
+  "cpu":  {
+    "count":  128,
+    "countLogical":  256
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA A100-PCIE-40GB",
+      "memoryTotal":  "42949672960",
+      "cudaCores":  6912,
+      "architecture":  "Ampere"
+    }
+  ],
+  "cudaVersion":  "12.2"
+}
