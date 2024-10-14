@@ -34,23 +34,9 @@ with h5py.File(yulei_file_path, 'r') as infile, h5py.File(out_file_path, 'w') as
     jets_data = infile['jets'][:]
     print("jets dataset:", jets_data.shape) # (10000, 4, 7)
 
-    # jets_pt = jets_data[:,:,0]
-    # jets_eta = jets_data[:,:,1]
-    # jets_phi = jets_data[:,:,2]
-    # jets_mass = jets_data[:,:,3]
-    # jets_btag = jets_data[:,:,4]
-
-    # # # Write the data into out file
-    # source_group.create_dataset("pt", data=jets_pt.astype('<f4'))
-    # source_group.create_dataset("eta", data=jets_eta.astype('<f4'))
-    # source_group.create_dataset("phi", data=jets_phi.astype('<f4'))
-    # source_group.create_dataset("mass", data=jets_mass.astype('<f4'))
-    # source_group.create_dataset("btag", data=jets_btag.astype('<f4'))
-
     # # MASK: if the jets is padded or not. (You may check, but I remember True means this jet is physical and False means this jet is padded one)
     # mask_data = np.full((10000, 4), True, dtype='|b1')
     # source_group.create_dataset("MASK", data=mask_data, dtype='|b1')
-
 
     
     # Add datasets for TARGETS/t1, t2
@@ -99,17 +85,6 @@ with h5py.File(yulei_file_path, 'r') as infile, h5py.File(out_file_path, 'w') as
         b_mother_mask = (genpart_index[evt]==b_genpart_M1[0]) | (genpart_index[evt]==b_genpart_M1[1]) # find location of b_mother in the array
         b_mother_pid = genpart_PID[evt][b_mother_mask]
         # print(b_genpart_M1)
-
-        # get quarks mother pid (W=24)
-        qs_pid_mask = (abs(genpart_PID[evt])==1) | (abs(genpart_PID[evt])==2) | (abs(genpart_PID[evt])==3) | (abs(genpart_PID[evt])==4)
-        q_genpart_M1 = genpart_M1[evt][qs_pid_mask] # get q mother index
-        q_mother_mask = (genpart_index[evt]==q_genpart_M1[0]) | (genpart_index[evt]==q_genpart_M1[1]) | (genpart_index[evt]==q_genpart_M1[2]) | (genpart_index[evt]==q_genpart_M1[3]) # find location of q_mother in the array
-        q_mother_pid = genpart_PID[evt][q_mother_mask]
-
-        # get W mother
-        W_pid_mask = abs(genpart_PID[evt])==24
-        W_genpart_M1 = genpart_M1[evt][W_pid_mask] # get W mother index
-        # print(W_genpart_M1)
 
         
         # check if the b is from top, if not reject event. pid of top is 6
