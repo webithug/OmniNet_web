@@ -2,6 +2,17 @@ import h5py
 import numpy as np
 
 
+def has_double_assignment(array):
+    count_dict = {}
+    
+    for num in array:
+        if num != -1:
+            if num in count_dict:
+                return True
+            count_dict[num] = 1
+            
+    return False
+
 # read yulei data
 yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/TTHadronics_367772000.h5'
 out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TTHadronics_367772000_omninet_10jets.h5'
@@ -76,33 +87,73 @@ with h5py.File(yulei_file_path, 'r') as infile, h5py.File(out_file_path, 'w') as
     count = 0
 
 
+    # loop over each event
     for evt in range(n_evt):
-        # check if the b is from top, if not reject event
-        # get b mother index 
-        b_genpart_M1 = genpart_M1[evt][(abs(genpart_PID[evt])==5)]
-        mother_mask = (genpart_index[evt]==b_genpart_M1[0]) | (genpart_index[evt]==b_genpart_M1[1])
-        mother_pid = genpart_PID[evt][mother_mask]
 
-        # pid of top is 6
-        if (abs(mother_pid[0]) == 6) and (abs(mother_pid[1]) == 6):
+        # check double assignment
+        if has_double_assignment(genmatched_index[evt]):
+            continue
 
-            # genmatched_index for b
-            b_genmatched_index = genmatched_index[evt][(abs(genpart_PID[evt])==5)]
-            # gen_matched_index for ucds
-            q_genmatched_index = genmatched_index[evt][(abs(genpart_PID[evt])==1) | (abs(genpart_PID[evt])==2) | (abs(genpart_PID[evt])==3) | (abs(genpart_PID[evt])==4)]
+        # get b mother pid
+        b_genpart_M1 = genpart_M1[evt][(abs(genpart_PID[evt])==5)] # get b mother index 
+        b_mother_mask = (genpart_index[evt]==b_genpart_M1[0]) | (genpart_index[evt]==b_genpart_M1[1]) # find location of b_mother in the array
+        b_mother_pid = genpart_PID[evt][b_mother_mask]
+        # print(b_genpart_M1)
 
-            # check double assignment
-            if b_genmatched_index[0] == b_genmatched_index[1]:
-                print("double assignment for b!")
-                continue
+        # get quarks mother pid (W=24)
+        qs_pid_mask = (abs(genpart_PID[evt])==1) | (abs(genpart_PID[evt])==2) | (abs(genpart_PID[evt])==3) | (abs(genpart_PID[evt])==4)
+        q_genpart_M1 = genpart_M1[evt][qs_pid_mask] # get q mother index
+        q_mother_mask = (genpart_index[evt]==q_genpart_M1[0]) | (genpart_index[evt]==q_genpart_M1[1]) | (genpart_index[evt]==q_genpart_M1[2]) | (genpart_index[evt]==q_genpart_M1[3]) # find location of q_mother in the array
+        q_mother_pid = genpart_PID[evt][q_mother_mask]
 
-            t1_b_data.append(b_genmatched_index[0])
-            t2_b_data.append(b_genmatched_index[1])
+        # get W mother
+        W_pid_mask = abs(genpart_PID[evt])==24
+        W_genpart_M1 = genpart_M1[evt][W_pid_mask] # get W mother index
+        # print(W_genpart_M1)
 
-            t1_q1_data.append(q_genmatched_index[0])
-            t1_q2_data.append(q_genmatched_index[1])
-            t2_q1_data.append(q_genmatched_index[2])
-            t2_q2_data.append(q_genmatched_index[3])
+        
+        # check if the b is from top, if not reject event. pid of top is 6
+        if (abs(b_mother_pid[0]) == 6) and (abs(b_mother_pid[1]) == 6):
+
+            # genpart_index for b
+            b_genpart_indices = genpart_index[evt][(abs(genpart_PID[evt])==5)]
+            t1_b_index = b_genpart_indices[0]
+            t2_b_index = b_genpart_indices[1]
+
+
+            t1_b_data.append(genmatched_index[evt][genpart_index[evt]==t1_b_index].item())
+            t2_b_data.append(genmatched_index[evt][genpart_index[evt]==t2_b_index].item())
+
+
+            # find t1_q1 and t1_q2, they should come from a W with W_M1==b_genpart_M1[0]
+            t1_idx = b_genpart_M1[0]
+            mom_is_t1_mask = genpart_M1[evt]==t1_idx
+            # get index of t1_W (both W and b have same mom t1)
+            if genpart_index[evt][mom_is_t1_mask][0]==t1_b_index:
+                t1_W_idx = genpart_index[evt][mom_is_t1_mask][1]
+            else :
+                t1_W_idx = genpart_index[evt][mom_is_t1_mask][0]
+            # mask for t1_q1 and t1_q2
+            t1_W_qs_mask = (genpart_M1[evt]==t1_W_idx)
+
+            t1_q1_data.append(genmatched_index[evt][t1_W_qs_mask][0].item())
+            t1_q2_data.append(genmatched_index[evt][t1_W_qs_mask][1].item())
+
+
+            # find t2_q1 and t2_q2, they should come from a W with W_M1==b_genpart_M1[1]
+            t2_idx = b_genpart_M1[1]
+            mom_is_t2_mask = genpart_M1[evt]==t2_idx
+            # get index of t2_W
+            if genpart_index[evt][mom_is_t2_mask][0]==t2_b_index:
+                t2_W_idx = genpart_index[evt][mom_is_t2_mask][1]
+            else :
+                t2_W_idx = genpart_index[evt][mom_is_t2_mask][0]
+            # mask for t1_q1 and t1_q2
+            t2_W_qs_mask = (genpart_M1[evt]==t2_W_idx)
+
+            t2_q1_data.append(genmatched_index[evt][t2_W_qs_mask][0].item())
+            t2_q2_data.append(genmatched_index[evt][t2_W_qs_mask][1].item())
+
 
             jets_pt_data.append(jets_data[evt,:,0])
             jets_eta_data.append(jets_data[evt,:,1])
@@ -110,6 +161,7 @@ with h5py.File(yulei_file_path, 'r') as infile, h5py.File(out_file_path, 'w') as
             jets_mass_data.append(jets_data[evt,:,3])
             jets_btag_data.append(jets_data[evt,:,4])
             mask_data.append(np.full((10), True, dtype='|b1'))
+
 
             count+=1
 

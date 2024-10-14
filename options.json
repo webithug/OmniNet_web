@@ -1,5 +1,5 @@
 {
-    "nMaxJet": 4,
+    "nMaxJet": 10,
     "hidden_dim": 32,
     "transformer_dim": 32,
     "transformer_dim_scale": 2.0,
@@ -44,7 +44,7 @@
     "masking": "Filling",
     "linear_prelu_activation": true,
     "event_info_file": "./event_files/full_hadronic_ttbar.yaml",
-    "training_file": "/global/homes/w/weipow/OmniNet_web/omninet/processed_data_web/TTHadronics_87670000_omninet.h5",
+    "training_file": "/pscratch/sd/w/weipow/OmniNet_Data/TTHadronics_367772000_omninet_10jets.h5",
     "validation_file": "",
     "testing_file": "",
     "normalize_features": 1,

@@ -1,0 +1,199 @@
+_wandb:
+    value:
+        cli_version: 0.18.3
+        m:
+            - "1": trainer/global_step
+              "6":
+                - 3
+              "7": []
+        python_version: 3.10.15
+        t:
+            "1":
+                - 1
+                - 5
+                - 9
+                - 53
+                - 55
+                - 103
+            "2":
+                - 1
+                - 5
+                - 9
+                - 53
+                - 55
+                - 103
+            "3":
+                - 1
+                - 7
+                - 13
+                - 23
+                - 55
+                - 66
+            "4": 3.10.15
+            "5": 0.18.3
+            "8":
+                - 5
+            "12": 0.18.3
+            "13": linux-x86_64
+PET_drop_probability:
+    value: 0
+PET_dropout:
+    value: 0
+PET_layer_scale:
+    value: true
+PET_layer_scale_init:
+    value: 1e-05
+PET_num_heads:
+    value: 4
+PET_num_layers:
+    value: 8
+PET_talking_head:
+    value: false
+assignment_loss_scale:
+    value: 1
+balance_classifications:
+    value: false
+balance_jets:
+    value: 0
+balance_losses:
+    value: true
+balance_particles:
+    value: 1
+batch_size:
+    value: 128
+classification_loss_scale:
+    value: 0
+combinatorial_scale:
+    value: 0
+combine_pair_loss:
+    value: min
+dataset_limit:
+    value: 1
+dataset_randomization:
+    value: 0
+detection_loss_scale:
+    value: 0
+diff_resnet_nlayer:
+    value: 3
+diff_sub_resnet_nlayer:
+    value: 2
+diff_transformer_nlayer:
+    value: 2
+dropout:
+    value: 0
+enable_local_embedding:
+    value: true
+epochs:
+    value: 500
+event_info_file:
+    value: ./event_files/full_hadronic_ttbar.yaml
+focal_gamma:
+    value: 0
+generation_loss_scale:
+    value: 1
+gradient_clip:
+    value: 0
+hidden_dim:
+    value: 32
+initial_embedding_dim:
+    value: 16
+initial_embedding_skip_connections:
+    value: 1
+kl_loss_scale:
+    value: 0
+l2_penalty:
+    value: 0.0002
+learning_rate:
+    value: 0.0015
+learning_rate_cycles:
+    value: 1
+learning_rate_warmup_epochs:
+    value: 1
+limit_to_num_jets:
+    value: 0
+linear_activation:
+    value: gelu
+linear_block_type:
+    value: GRU
+linear_prelu_activation:
+    value: true
+local_Krank:
+    value: 2
+local_point_index:
+    value:
+        - 2
+        - 3
+mask_sequence_vectors:
+    value: 1
+masking:
+    value: Filling
+nMaxJet:
+    value: 10
+normalization:
+    value: LayerNorm
+normalize_features:
+    value: 1
+num_attention_heads:
+    value: 4
+num_branch_embedding_layers:
+    value: 1
+num_branch_encoder_layers:
+    value: 1
+num_classification_layers:
+    value: 3
+num_dataloader_workers:
+    value: 16
+num_detector_layers:
+    value: 2
+num_embedding_layers:
+    value: 2
+num_encoder_layers:
+    value: 2
+num_gpu:
+    value: 1
+num_jet_embedding_layers:
+    value: 0
+num_jet_encoder_layers:
+    value: 2
+num_local_layer:
+    value: 3
+num_regression_layers:
+    value: 3
+optimizer:
+    value: AdamW
+partial_events:
+    value: 1
+position_embedding_dim:
+    value: 32
+regression_loss_scale:
+    value: 0
+skip_connections:
+    value: 1
+split_symmetric_attention:
+    value: 1
+testing_file:
+    value: ""
+time_fprojection_dim:
+    value: 64
+train_validation_split:
+    value: 0.95
+training_file:
+    value: /pscratch/sd/w/weipow/OmniNet_Data/TTHadronics_367772000_omninet_10jets.h5
+transformer_activation:
+    value: gelu
+transformer_dim:
+    value: 32
+transformer_dim_scale:
+    value: 2
+transformer_type:
+    value: Gated
+trial_output_dir:
+    value: ./test_output
+trial_time:
+    value: ""
+usable_gpus:
+    value: ""
+validation_file:
+    value: ""
+verbose_output:
+    value: false
