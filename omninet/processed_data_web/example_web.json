@@ -32,7 +32,7 @@
     "skip_connections": true,
     "initial_embedding_skip_connections": true,
     "event_info_file": "./event_files/full_hadronic_ttbar.yaml",
-    "training_file": "/global/homes/w/weipow/OmniNet_web/omninet/processed_data_web/TTHadronics_87670000_omninet.h5",
+    "training_file": "/pscratch/sd/w/weipow/OmniNet_Data/TTHadronics_367772000_omninet_10jets.h5",
 
     "normalize_features": true,
     "limit_to_num_jets": 0,
