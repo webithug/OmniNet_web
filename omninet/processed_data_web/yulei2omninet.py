@@ -161,7 +161,7 @@ def convert_TT2L(yulei_file_path, out_file_path):
     # Open yulei generated file and my output file
     with h5py.File(yulei_file_path, 'r') as infile, h5py.File(out_file_path, 'w') as outfile:
         
-        # Create new groups for INPUTS and TARGETS
+        # Create new groups for INPUTS
         inputs_group = outfile.create_group("INPUTS")
         source_group = inputs_group.create_group("Source")
         
@@ -497,8 +497,110 @@ def convert_TT1L(yulei_file_path, out_file_path):
 
         print(count)
                 
+# "WJetsToLNu": {"diagram": {"W": {"l":None, "v": None}}}
+def convert_WJetsToLNu(yulei_file_path, out_file_path):
+    # Open yulei generated file and my output file
+    with h5py.File(yulei_file_path, 'r') as infile, h5py.File(out_file_path, 'w') as outfile:
+        
+        # Create new groups for INPUTS
+        inputs_group = outfile.create_group("INPUTS")
+        source_group = inputs_group.create_group("Source")
+        
+        # Create new groups for TARGETS
+        targets_group = outfile.create_group("TARGETS")
+        l_group = targets_group.create_group("l")
+        v_group = targets_group.create_group("v")
+        
+        # # Add datasets for INPUTS/Source 
+        # # # Get data from infile[jets]: ["jet_pt","jet_eta","jet_phi","jet_m","jet_btag","jet_npart","jet_flavor"]
+        jets_data = infile['jets'][:]
+        print("jets dataset:", jets_data.shape) # (10000, 4, 7)
+
+        # # MASK: if the jets is padded or not. (You may check, but I remember True means this jet is physical and False means this jet is padded one)
+        # mask_data = np.full((10000, 4), True, dtype='|b1')
+        # source_group.create_dataset("MASK", data=mask_data, dtype='|b1')
+
+        
+        # Add datasets for TARGETS/l, v
+        # # Get data from infile["genpart"]: ["genpart_pt", "genpart_eta", "genpart_phi", "genpart_m", "genpart_index", "genpart_M1", "genpart_M2", "genpart_PID", "genpart_Status", "genmatched_index"]
+        genpart_data = infile['genpart'][:]
+        print("genpart_data dataset:", genpart_data.shape) # (10000, 12, 10)
+
+        genpart_index = genpart_data[:,:,4]
+        genpart_M1 = genpart_data[:,:,5]
+        genpart_PID = genpart_data[:,:,7]
+        genmatched_index = genpart_data[:,:,-1]
+
+        # loop over all events
+        n_evt = genpart_data.shape[0]
+
+        # # INPUT
+        jets_pt_data = []
+        jets_eta_data = []
+        jets_phi_data = []
+        jets_mass_data = []
+        jets_btag_data = []
+        mask_data = []
+
+        # # TARGET
+        l_data = []
+        v_data = []
+        count = 0
+
+        # loop over each event
+        for evt in range(n_evt):
+
+            # check double assignment
+            if has_double_assignment(genmatched_index[evt]):
+                continue
 
 
+
+            # get W index
+            W_idx = genpart_index[evt][(abs(genpart_PID[evt])==24)]
+
+            # find W's children
+            mom_is_W_mask = (genpart_M1[evt]==W_idx)
+            W_children_pid = genpart_PID[evt][mom_is_W_mask]
+            W_children_genmatched_idx = genmatched_index[evt][mom_is_W_mask]
+            # # if W doesn't have two children, reject event
+            if len(W_children_pid)<2:
+                continue
+            # # distinguish l, v (bigger is v, smaller is l)
+            if abs(W_children_pid[0]) > abs(W_children_pid[1]):
+                v_data.append(W_children_genmatched_idx[0])
+                l_data.append(W_children_genmatched_idx[1])
+            else:
+                v_data.append(W_children_genmatched_idx[1])
+                l_data.append(W_children_genmatched_idx[0])
+
+            print(W_children_pid)
+
+        
+
+            # data for "Source" 
+            jets_pt_data.append(jets_data[evt,:,0])
+            jets_eta_data.append(jets_data[evt,:,1])
+            jets_phi_data.append(jets_data[evt,:,2])
+            jets_mass_data.append(jets_data[evt,:,3])
+            jets_btag_data.append(jets_data[evt,:,4])
+            mask_data.append(np.full((10), True, dtype='|b1'))
+
+            count+=1
+
+
+
+        source_group.create_dataset("pt", data=np.array(jets_pt_data).astype('<f4'))
+        source_group.create_dataset("eta", data=np.array(jets_eta_data).astype('<f4'))
+        source_group.create_dataset("phi", data=np.array(jets_phi_data).astype('<f4'))
+        source_group.create_dataset("mass", data=np.array(jets_mass_data).astype('<f4'))
+        source_group.create_dataset("btag", data=np.array(jets_btag_data).astype('<f4'))
+        source_group.create_dataset("MASK", data=np.array(mask_data), dtype='|b1')
+
+        l_group.create_dataset("l", data=np.array(l_data).astype('<i8'))
+        v_group.create_dataset("v", data=np.array(v_data).astype('<i8'))
+
+        print(count)
 
 
 
@@ -511,12 +613,17 @@ if __name__ == '__main__':
     # TTH_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TTHadronics_367772000_omninet_10jets.h5'    
     # convert_TTHadronics(TTH_yulei_file_path, TTH_out_file_path)
 
-    # TT1L
-    TT1L_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/TT1L_367772000.h5'
-    TT1L_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TT1L_367772000_omninet_10jets.h5' 
-    convert_TT1L(TT1L_yulei_file_path, TT1L_out_file_path)
+    # # TT1L
+    # TT1L_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/TT1L_367772000.h5'
+    # TT1L_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TT1L_367772000_omninet_10jets.h5' 
+    # convert_TT1L(TT1L_yulei_file_path, TT1L_out_file_path)
 
     # # TT2L: 
     # TT2L_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/TT2L_367772000.h5'
     # TT2L_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TT2L_367772000_omninet_10jets.h5' 
     # convert_TT2L(TT2L_yulei_file_path, TT2L_out_file_path)
+
+    # WJetsToLNu: 
+    WJetsToLNu_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/WJetsToLNu_367772000.h5'
+    WJetsToLNu_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/WJetsToLNu_367772000_omninet_10jets.h5' 
+    convert_WJetsToLNu(WJetsToLNu_yulei_file_path, WJetsToLNu_out_file_path)
