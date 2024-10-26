@@ -71,7 +71,7 @@
     "kl_loss_scale": 0.0,
     "regression_loss_scale": 0.0,
     "classification_loss_scale": 0.0,
-    "generation_loss_scale": 1.0,
+    "generation_loss_scale": 0.0,
     "balance_losses": true,
     "l2_penalty": 0.0002,
     "gradient_clip": 0.0,
