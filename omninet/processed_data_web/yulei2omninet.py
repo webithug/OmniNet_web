@@ -270,7 +270,7 @@ def convert_TT2L(yulei_file_path, out_file_path):
                 # check if each evt has 2 parts whose mother is t1_W and 2 for t2_W, else reject evt
                 if ( (len(genmatched_index[evt][t1_W_lv_mask]) == 2) and (len(genmatched_index[evt][t2_W_lv_mask]) == 2) ):
 
-                    # fill the t1_b data
+                    # fill the t1 data
                     t1_b_data.append(genmatched_index[evt][genpart_index[evt]==t1_b_index].item())
                     # distinguish t1_l and t1_v
                     if abs(genpart_PID[evt][t1_W_lv_mask][0])== 11 or 13:
@@ -280,7 +280,7 @@ def convert_TT2L(yulei_file_path, out_file_path):
                         t1_l_data.append(genmatched_index[evt][t1_W_lv_mask][1].item())
                         t1_v_data.append(genmatched_index[evt][t1_W_lv_mask][0].item())
 
-                    # fill in t2_b data
+                    # fill in t2 data
                     t2_b_data.append(genmatched_index[evt][genpart_index[evt]==t2_b_index].item())
                     # distinguish t2_l and t2_v
                     if abs(genpart_PID[evt][t2_W_lv_mask][0])== 11 or 13:
@@ -302,6 +302,7 @@ def convert_TT2L(yulei_file_path, out_file_path):
                 mask_data.append(np.full((10), True, dtype='|b1'))
 
 
+
                 count+=1
 
 
@@ -320,10 +321,6 @@ def convert_TT2L(yulei_file_path, out_file_path):
         t2_group.create_dataset("v", data=np.array(t2_v_data).astype('<i8'))
 
         print(count)
-
-
-                
-
 
 # "TT1L": {"diagram": {"t1": {"b": None, "W": {"q1": None, "q2": None, "SYMMETRY": ["q1", "q2"]}}, "t2": {"b": None, "W": {"l": None, "v": None}}}}
 def convert_TT1L(yulei_file_path, out_file_path):
@@ -387,9 +384,9 @@ def convert_TT1L(yulei_file_path, out_file_path):
             b_mother_mask = (genpart_index[evt]==b_genpart_M1[0]) | (genpart_index[evt]==b_genpart_M1[1]) # find location of b_mother in the array
             b_mother_pid = genpart_PID[evt][b_mother_mask]
 
-            print(b_mother_pid)
 
-            # check if the b is from top, if not reject event. pid of top is 6
+
+            # check if both b are from top, if not reject event. pid of top is 6
             if (abs(b_mother_pid[0]) == 6) and (abs(b_mother_pid[1]) == 6):
 
                 # genpart_index for b
@@ -398,8 +395,108 @@ def convert_TT1L(yulei_file_path, out_file_path):
                 t2_b_index = b_genpart_indices[1]
 
 
-                t1_b_data.append(genmatched_index[evt][genpart_index[evt]==t1_b_index].item())
-                t2_b_data.append(genmatched_index[evt][genpart_index[evt]==t2_b_index].item())
+
+                # find t1_child1 and t1_child2, they should come from a W with W_M1==b_genpart_M1[0]
+                t1_idx = b_genpart_M1[0]
+                mom_is_t1_mask = genpart_M1[evt]==t1_idx
+                # get index of t1_W (both W and b have same mom t1)
+                if genpart_index[evt][mom_is_t1_mask][0]==t1_b_index:
+                    t1_W_idx = genpart_index[evt][mom_is_t1_mask][1]
+                else :
+                    t1_W_idx = genpart_index[evt][mom_is_t1_mask][0]
+                # mask to find parts whose mother is t1_W, this should give us t1_child1 and t1_child2
+                t1_W_child_mask = (genpart_M1[evt]==t1_W_idx)
+
+
+
+                # find t2_child1 and t2_child2, they should come from a W with W_M1==b_genpart_M1[1]
+                t2_idx = b_genpart_M1[1]
+                mom_is_t2_mask = genpart_M1[evt]==t2_idx
+                # get index of t2_W (both W and b have same mom t2)
+                if genpart_index[evt][mom_is_t2_mask][0]==t2_b_index:
+                    t2_W_idx = genpart_index[evt][mom_is_t2_mask][1]
+                else :
+                    t2_W_idx = genpart_index[evt][mom_is_t2_mask][0]
+                # mask to find parts whose mother is t1_W, this should give us t2_child1 and t2_child2
+                t2_W_child_mask = (genpart_M1[evt]==t2_W_idx)
+
+
+
+                # start filling data
+                # check if each evt has 2 parts whose mother is t1_W and 2 for t2_W, else reject evt
+                if ( (len(genmatched_index[evt][t1_W_child_mask]) == 2) and (len(genmatched_index[evt][t2_W_child_mask]) == 2) ):
+
+                    # distinguish hadronic or leptonic for t1 (determine t1 decay, then t2 is the other channel)
+                    t1_children_pid = genpart_PID[evt][t1_W_child_mask]
+                    print(t1_children_pid)
+                    # quarks_pid:1~8, leptons_pid:11~18
+                    if ( abs(t1_children_pid[0])<10 and abs(t1_children_pid[1])<10 ): # t1 is hadronic
+
+                        # fill the t1 data
+                        t1_b_data.append(genmatched_index[evt][genpart_index[evt]==t1_b_index].item())
+                        t1_q1_data.append(genmatched_index[evt][t1_W_child_mask][0].item())
+                        t1_q2_data.append(genmatched_index[evt][t1_W_child_mask][1].item())
+                        
+                        # fill in t2 data
+                        t2_b_data.append(genmatched_index[evt][genpart_index[evt]==t2_b_index].item())
+                        # distinguish t2_l and t2_v
+                        if abs(genpart_PID[evt][t2_W_child_mask][0])== 11 or 13:
+                            t2_l_data.append(genmatched_index[evt][t2_W_child_mask][0].item())
+                            t2_v_data.append(genmatched_index[evt][t2_W_child_mask][1].item())
+                        else:
+                            t2_l_data.append(genmatched_index[evt][t2_W_child_mask][1].item())
+                            t2_v_data.append(genmatched_index[evt][t2_W_child_mask][0].item())
+
+                    else: # t1 is leptonic
+                        # use t2 to fill the final t1 oultput data
+                        t1_b_data.append(genmatched_index[evt][genpart_index[evt]==t2_b_index].item())
+                        t1_q1_data.append(genmatched_index[evt][t2_W_child_mask][0].item())
+                        t1_q2_data.append(genmatched_index[evt][t2_W_child_mask][1].item())
+                        
+                        # use t1 to fill the final t2 output data
+                        t2_b_data.append(genmatched_index[evt][genpart_index[evt]==t1_b_index].item())
+                        # distinguish t2_l and t2_v
+                        if abs(genpart_PID[evt][t1_W_child_mask][0])== 11 or 13:
+                            t2_l_data.append(genmatched_index[evt][t1_W_child_mask][0].item())
+                            t2_v_data.append(genmatched_index[evt][t1_W_child_mask][1].item())
+                        else:
+                            t2_l_data.append(genmatched_index[evt][t1_W_child_mask][1].item())
+                            t2_v_data.append(genmatched_index[evt][t1_W_child_mask][0].item())
+                
+                else:
+                    continue
+
+
+
+                # data for "Source" 
+                jets_pt_data.append(jets_data[evt,:,0])
+                jets_eta_data.append(jets_data[evt,:,1])
+                jets_phi_data.append(jets_data[evt,:,2])
+                jets_mass_data.append(jets_data[evt,:,3])
+                jets_btag_data.append(jets_data[evt,:,4])
+                mask_data.append(np.full((10), True, dtype='|b1'))
+
+
+
+                count+=1
+
+
+        source_group.create_dataset("pt", data=np.array(jets_pt_data).astype('<f4'))
+        source_group.create_dataset("eta", data=np.array(jets_eta_data).astype('<f4'))
+        source_group.create_dataset("phi", data=np.array(jets_phi_data).astype('<f4'))
+        source_group.create_dataset("mass", data=np.array(jets_mass_data).astype('<f4'))
+        source_group.create_dataset("btag", data=np.array(jets_btag_data).astype('<f4'))
+        source_group.create_dataset("MASK", data=np.array(mask_data), dtype='|b1')
+
+        t1_group.create_dataset("b", data=np.array(t1_b_data).astype('<i8'))
+        t1_group.create_dataset("q1", data=np.array(t1_q1_data).astype('<i8'))
+        t1_group.create_dataset("q2", data=np.array(t1_q2_data).astype('<i8'))
+        t2_group.create_dataset("b", data=np.array(t2_b_data).astype('<i8'))
+        t2_group.create_dataset("l", data=np.array(t2_l_data).astype('<i8'))
+        t2_group.create_dataset("v", data=np.array(t2_v_data).astype('<i8'))
+
+        print(count)
+                
 
 
 
