@@ -173,7 +173,13 @@ def convert_TT2L(yulei_file_path, out_file_path):
         # # Add datasets for INPUTS/Source 
         # # # Get data from infile[jets]: ["jet_pt","jet_eta","jet_phi","jet_m","jet_btag","jet_npart","jet_flavor"]
         jets_data = infile['jets'][:]
-        print("jets dataset:", jets_data.shape) # (10000, 4, 7)
+        print("jets dataset:", jets_data.shape) # (10000, 10, 7)
+        # # # Get data from infile[els]: ["el_pt","el_eta","el_phi","el_m","el_ch"]
+        els_data = infile['els'][:]
+        print("els dataset:", els_data.shape) # (10000, 4, 5)
+        # # # Get data from infile[mus]: ["mu_pt","mu_eta","mu_phi","mu_m","mu_ch"]
+        mus_data = infile['mus'][:]
+        print("mus dataset:", mus_data.shape) # (10000, 4, 5)
 
         # Add datasets for TARGETS/t1, t2
         # # Get data from infile["genpart"]: ["genpart_pt", "genpart_eta", "genpart_phi", "genpart_m", "genpart_index", "genpart_M1", "genpart_M2", "genpart_PID", "genpart_Status", "genmatched_index"]
@@ -185,8 +191,8 @@ def convert_TT2L(yulei_file_path, out_file_path):
         genpart_PID = genpart_data[:,:,7]
         genmatched_index = genpart_data[:,:,-1]
 
-        # # temporary: for matched > 4, make it to -1
-        # genmatched_index[genmatched_index>4] = -1
+
+
 
         # loop over all events
         n_evt = genpart_data.shape[0]
@@ -299,13 +305,21 @@ def convert_TT2L(yulei_file_path, out_file_path):
                 else:
                     continue
 
-                # data for "Source" 
-                jets_pt_data.append(jets_data[evt,:,0])
-                jets_eta_data.append(jets_data[evt,:,1])
-                jets_phi_data.append(jets_data[evt,:,2])
-                jets_mass_data.append(jets_data[evt,:,3])
-                jets_btag_data.append(jets_data[evt,:,4])
-                mask_data.append(np.full((10), True, dtype='|b1'))
+                # data for "Source". 
+                # # Merge jet, els, mus for each event
+                merged_pt = np.concatenate( (jets_data[evt,:,0], els_data[evt,:,0], mus_data[evt,:,0] ), axis=0 )
+                merged_eta = np.concatenate( (jets_data[evt,:,1], els_data[evt,:,1], mus_data[evt,:,1] ), axis=0 )
+                merged_phi = np.concatenate( (jets_data[evt,:,2], els_data[evt,:,2], mus_data[evt,:,2] ), axis=0 )
+                merged_mass = np.concatenate( (jets_data[evt,:,3], els_data[evt,:,3], mus_data[evt,:,3] ), axis=0 )
+                merged_btag = np.concatenate( (jets_data[evt,:,4], np.full(len(els_data[evt,:,0]),-1), np.full(len(els_data[evt,:,0]),-1) ), axis=0 )
+
+                # # collect the event into jet_xx_data (list)
+                jets_pt_data.append(merged_pt)
+                jets_eta_data.append(merged_eta)
+                jets_phi_data.append(merged_phi)
+                jets_mass_data.append(merged_mass)
+                jets_btag_data.append(merged_btag)
+                mask_data.append(np.full((len(merged_pt)), True, dtype='|b1'))
 
 
 
