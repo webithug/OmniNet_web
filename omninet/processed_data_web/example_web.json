@@ -31,8 +31,8 @@
 
     "skip_connections": true,
     "initial_embedding_skip_connections": true,
-    "event_info_file": "./event_files/full_hadronic_ttbar.yaml",
-    "training_file": "/pscratch/sd/w/weipow/OmniNet_Data/TTHadronics_367772000_omninet_10jets.h5",
+    "event_info_file": "./event_files/full_leptonic_ttbar.yaml",
+    "training_file": "/pscratch/sd/w/weipow/OmniNet_Data/TT2L_367772000_omninet_10jets.h5",
 
     "normalize_features": true,
     "limit_to_num_jets": 0,

@@ -175,11 +175,6 @@ def convert_TT2L(yulei_file_path, out_file_path):
         jets_data = infile['jets'][:]
         print("jets dataset:", jets_data.shape) # (10000, 4, 7)
 
-        # # MASK: if the jets is padded or not. (You may check, but I remember True means this jet is physical and False means this jet is padded one)
-        # mask_data = np.full((10000, 4), True, dtype='|b1')
-        # source_group.create_dataset("MASK", data=mask_data, dtype='|b1')
-
-        
         # Add datasets for TARGETS/t1, t2
         # # Get data from infile["genpart"]: ["genpart_pt", "genpart_eta", "genpart_phi", "genpart_m", "genpart_index", "genpart_M1", "genpart_M2", "genpart_PID", "genpart_Status", "genmatched_index"]
         genpart_data = infile['genpart'][:]
@@ -228,7 +223,7 @@ def convert_TT2L(yulei_file_path, out_file_path):
             # print(b_genpart_M1)
 
             
-            # check if the b is from top, if not reject event. pid of top is 6
+            # check if the b is from top, if not reject event. (pid of top is 6)
             if (abs(b_mother_pid[0]) == 6) and (abs(b_mother_pid[1]) == 6):
 
                 # genpart_index for b
@@ -273,23 +268,34 @@ def convert_TT2L(yulei_file_path, out_file_path):
                     # fill the t1 data
                     t1_b_data.append(genmatched_index[evt][genpart_index[evt]==t1_b_index].item())
                     # distinguish t1_l and t1_v
-                    if abs(genpart_PID[evt][t1_W_lv_mask][0])== 11 or 13:
-                        t1_l_data.append(genmatched_index[evt][t1_W_lv_mask][0].item())
+                    if abs(genpart_PID[evt][t1_W_lv_mask][0])== 11: # [0] is electron, gen_match_index: 10~13
+                        t1_l_data.append(genmatched_index[evt][t1_W_lv_mask][0].item()+10 if genmatched_index[evt][t1_W_lv_mask][0].item() >= 0 else genmatched_index[evt][t1_W_lv_mask][0].item())
                         t1_v_data.append(genmatched_index[evt][t1_W_lv_mask][1].item())
-                    else:
-                        t1_l_data.append(genmatched_index[evt][t1_W_lv_mask][1].item())
+                    elif abs(genpart_PID[evt][t1_W_lv_mask][0])== 13: # [0] is muon, gen_match_index: 14~17
+                        t1_l_data.append(genmatched_index[evt][t1_W_lv_mask][0].item()+14 if genmatched_index[evt][t1_W_lv_mask][0].item() >= 0 else genmatched_index[evt][t1_W_lv_mask][0].item())
+                        t1_v_data.append(genmatched_index[evt][t1_W_lv_mask][1].item())
+                    elif abs(genpart_PID[evt][t1_W_lv_mask][1])== 11: # [1] is electron, gen_match_index: 10~13
+                        t1_l_data.append(genmatched_index[evt][t1_W_lv_mask][1].item()+10 if genmatched_index[evt][t1_W_lv_mask][0].item() >= 0 else genmatched_index[evt][t1_W_lv_mask][0].item())
+                        t1_v_data.append(genmatched_index[evt][t1_W_lv_mask][0].item())
+                    else: # [1] is muon, gen_match_index: 14~17
+                        t1_l_data.append(genmatched_index[evt][t1_W_lv_mask][1].item()+14 if genmatched_index[evt][t1_W_lv_mask][0].item() >= 0 else genmatched_index[evt][t1_W_lv_mask][0].item())
                         t1_v_data.append(genmatched_index[evt][t1_W_lv_mask][0].item())
 
                     # fill in t2 data
                     t2_b_data.append(genmatched_index[evt][genpart_index[evt]==t2_b_index].item())
                     # distinguish t2_l and t2_v
-                    if abs(genpart_PID[evt][t2_W_lv_mask][0])== 11 or 13:
-                        t2_l_data.append(genmatched_index[evt][t2_W_lv_mask][0].item())
+                    if abs(genpart_PID[evt][t2_W_lv_mask][0])== 11:
+                        t2_l_data.append(genmatched_index[evt][t2_W_lv_mask][0].item()+10 if genmatched_index[evt][t2_W_lv_mask][0].item() >= 0 else genmatched_index[evt][t2_W_lv_mask][0].item())
                         t2_v_data.append(genmatched_index[evt][t2_W_lv_mask][1].item())
-                    else:
-                        t2_l_data.append(genmatched_index[evt][t2_W_lv_mask][1].item())
+                    elif abs(genpart_PID[evt][t2_W_lv_mask][0])== 13:
+                        t2_l_data.append(genmatched_index[evt][t2_W_lv_mask][0].item()+14 if genmatched_index[evt][t2_W_lv_mask][0].item() >= 0 else genmatched_index[evt][t2_W_lv_mask][0].item())
+                        t2_v_data.append(genmatched_index[evt][t2_W_lv_mask][1].item())
+                    elif abs(genpart_PID[evt][t2_W_lv_mask][1])== 11: 
+                        t2_l_data.append(genmatched_index[evt][t2_W_lv_mask][1].item()+10 if genmatched_index[evt][t2_W_lv_mask][0].item() >= 0 else genmatched_index[evt][t2_W_lv_mask][0].item())
                         t2_v_data.append(genmatched_index[evt][t2_W_lv_mask][0].item())
-                
+                    else: 
+                        t2_l_data.append(genmatched_index[evt][t2_W_lv_mask][1].item()+14 if genmatched_index[evt][t2_W_lv_mask][0].item() >= 0 else genmatched_index[evt][t2_W_lv_mask][0].item())
+                        t2_v_data.append(genmatched_index[evt][t2_W_lv_mask][0].item())
                 else:
                     continue
 
@@ -304,6 +310,7 @@ def convert_TT2L(yulei_file_path, out_file_path):
 
 
                 count+=1
+
 
 
         source_group.create_dataset("pt", data=np.array(jets_pt_data).astype('<f4'))
@@ -618,12 +625,12 @@ if __name__ == '__main__':
     # TT1L_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TT1L_367772000_omninet_10jets.h5' 
     # convert_TT1L(TT1L_yulei_file_path, TT1L_out_file_path)
 
-    # # TT2L: 
-    # TT2L_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/TT2L_367772000.h5'
-    # TT2L_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TT2L_367772000_omninet_10jets.h5' 
-    # convert_TT2L(TT2L_yulei_file_path, TT2L_out_file_path)
+    # TT2L: 
+    TT2L_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/TT2L_367772000.h5'
+    TT2L_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TT2L_367772000_omninet_10jets.h5' 
+    convert_TT2L(TT2L_yulei_file_path, TT2L_out_file_path)
 
     # WJetsToLNu: 
-    WJetsToLNu_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/WJetsToLNu_367772000.h5'
-    WJetsToLNu_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/WJetsToLNu_367772000_omninet_10jets.h5' 
-    convert_WJetsToLNu(WJetsToLNu_yulei_file_path, WJetsToLNu_out_file_path)
+    # WJetsToLNu_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/WJetsToLNu_367772000.h5'
+    # WJetsToLNu_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/WJetsToLNu_367772000_omninet_10jets.h5' 
+    # convert_WJetsToLNu(WJetsToLNu_yulei_file_path, WJetsToLNu_out_file_path)
