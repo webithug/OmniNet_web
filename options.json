@@ -1,5 +1,5 @@
 {
-    "nMaxJet": 10,
+    "nMaxJet": 18,
     "hidden_dim": 32,
     "transformer_dim": 32,
     "transformer_dim_scale": 2.0,
@@ -43,8 +43,8 @@
     "normalization": "LayerNorm",
     "masking": "Filling",
     "linear_prelu_activation": true,
-    "event_info_file": "./event_files/full_leptonic_ttbar.yaml",
-    "training_file": "/pscratch/sd/w/weipow/OmniNet_Data/TT2L_367772000_omninet_10jets.h5",
+    "event_info_file": "/global/homes/w/weipow/OmniNet_web/event_files/full_leptonic_ttbar.yaml",
+    "training_file": "/pscratch/sd/w/weipow/OmniNet_Data/TT2L_722439_omninet_10jets.h5",
     "validation_file": "",
     "testing_file": "",
     "normalize_features": 1,

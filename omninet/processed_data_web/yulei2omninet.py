@@ -630,8 +630,8 @@ def convert_WJetsToLNu(yulei_file_path, out_file_path):
 if __name__ == '__main__':
 
     # # TTH
-    # TTH_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/TTHadronics_367772000.h5'
-    # TTH_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TTHadronics_367772000_omninet_10jets.h5'    
+    # TTH_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/TTHadronics_722439.h5'
+    # TTH_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TTHadronics_722439_omninet_10jets.h5'    
     # convert_TTHadronics(TTH_yulei_file_path, TTH_out_file_path)
 
     # # TT1L
@@ -640,8 +640,8 @@ if __name__ == '__main__':
     # convert_TT1L(TT1L_yulei_file_path, TT1L_out_file_path)
 
     # TT2L: 
-    TT2L_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/TT2L_367772000.h5'
-    TT2L_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TT2L_367772000_omninet_10jets.h5' 
+    TT2L_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/TT2L_722439.h5'
+    TT2L_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TT2L_722439_omninet_10jets.h5' 
     convert_TT2L(TT2L_yulei_file_path, TT2L_out_file_path)
 
     # WJetsToLNu: 
