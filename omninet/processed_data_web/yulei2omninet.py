@@ -1,5 +1,7 @@
 import h5py
 import numpy as np
+import glob
+import os
 
 
 def has_double_assignment(array):
@@ -13,20 +15,65 @@ def has_double_assignment(array):
             
     return False
 
+
+
+def append_to_dataset(group, name, new_data, dtype=None):
+    if name in group:
+        # Dataset exists, so resize it to append new data
+        dataset = group[name]
+        original_size = dataset.shape[0]
+        new_size = original_size + new_data.shape[0]
+        dataset.resize(new_size, axis=0)
+        dataset[original_size:] = new_data  # Append new data
+    else:
+        # Dataset doesn't exist, so create it with initial data
+        maxshape = (None,) + new_data.shape[1:]  # Allow unlimited growth along the first axis
+        group.create_dataset(name, data=new_data, maxshape=maxshape, dtype=dtype, chunks=True)
+
+
+
 # "TTHadronics": {"diagram": {"t1": {"b": None, "W": {"q1": None, "q2": None, "SYMMETRY": ["q1", "q2"]}}, "t2": {"b": None, "W": {"q1": None, "q2": None, "SYMMETRY": ["q1", "q2"]}}, "SYMMETRY": ["t1", "t2"]}},
 def convert_TTHadronics(yulei_file_path, out_file_path):
 
     # Open yulei generated file and my output file
-    with h5py.File(yulei_file_path, 'r') as infile, h5py.File(out_file_path, 'w') as outfile:
+    with h5py.File(yulei_file_path, 'r') as infile, h5py.File(out_file_path, 'a') as outfile:
         
-        # Create new groups for INPUTS and TARGETS
-        inputs_group = outfile.create_group("INPUTS")
-        source_group = inputs_group.create_group("Source")
+        # # Create new groups for INPUTS and TARGETS
+        # inputs_group = outfile.create_group("INPUTS")
+        # source_group = inputs_group.create_group("Source")
         
-        # Create new groups for TARGETS
-        targets_group = outfile.create_group("TARGETS")
-        t1_group = targets_group.create_group("t1")
-        t2_group = targets_group.create_group("t2")
+        # # Create new groups for TARGETS
+        # targets_group = outfile.create_group("TARGETS")
+        # t1_group = targets_group.create_group("t1")
+        # t2_group = targets_group.create_group("t2")
+
+        # Check and create INPUTS group only if it does not exist
+        if "INPUTS" not in outfile:
+            inputs_group = outfile.create_group("INPUTS")
+        else:
+            inputs_group = outfile["INPUTS"]
+
+        # Check and create TARGETS group only if it does not exist
+        if "TARGETS" not in outfile:
+            targets_group = outfile.create_group("TARGETS")
+        else:
+            targets_group = outfile["TARGETS"]
+        
+        # Check and create subgroups within INPUTS and TARGETS
+        if "Source" not in inputs_group:
+            source_group = inputs_group.create_group("Source")
+        else:
+            source_group = inputs_group["Source"]
+        
+        if "t1" not in targets_group:
+            t1_group = targets_group.create_group("t1")
+        else:
+            t1_group = targets_group["t1"]
+        
+        if "t2" not in targets_group:
+            t2_group = targets_group.create_group("t2")
+        else:
+            t2_group = targets_group["t2"]
         
         # # Add datasets for INPUTS/Source 
         # # # Get data from infile[jets]: ["jet_pt","jet_eta","jet_phi","jet_m","jet_btag","jet_npart","jet_flavor"]
@@ -140,19 +187,34 @@ def convert_TTHadronics(yulei_file_path, out_file_path):
                 count+=1
 
 
-        source_group.create_dataset("pt", data=np.array(jets_pt_data).astype('<f4'))
-        source_group.create_dataset("eta", data=np.array(jets_eta_data).astype('<f4'))
-        source_group.create_dataset("phi", data=np.array(jets_phi_data).astype('<f4'))
-        source_group.create_dataset("mass", data=np.array(jets_mass_data).astype('<f4'))
-        source_group.create_dataset("btag", data=np.array(jets_btag_data).astype('<f4'))
-        source_group.create_dataset("MASK", data=np.array(mask_data), dtype='|b1')
+        # source_group.create_dataset("pt", data=np.array(jets_pt_data).astype('<f4'))
+        # source_group.create_dataset("eta", data=np.array(jets_eta_data).astype('<f4'))
+        # source_group.create_dataset("phi", data=np.array(jets_phi_data).astype('<f4'))
+        # source_group.create_dataset("mass", data=np.array(jets_mass_data).astype('<f4'))
+        # source_group.create_dataset("btag", data=np.array(jets_btag_data).astype('<f4'))
+        # source_group.create_dataset("MASK", data=np.array(mask_data), dtype='|b1')
 
-        t1_group.create_dataset("b", data=np.array(t1_b_data).astype('<i8'))
-        t1_group.create_dataset("q1", data=np.array(t1_q1_data).astype('<i8'))
-        t1_group.create_dataset("q2", data=np.array(t1_q2_data).astype('<i8'))
-        t2_group.create_dataset("b", data=np.array(t2_b_data).astype('<i8'))
-        t2_group.create_dataset("q1", data=np.array(t2_q1_data).astype('<i8'))
-        t2_group.create_dataset("q2", data=np.array(t2_q2_data).astype('<i8'))
+        append_to_dataset(source_group, "pt", np.array(jets_pt_data).astype('<f4'))
+        append_to_dataset(source_group, "eta", np.array(jets_eta_data).astype('<f4'))
+        append_to_dataset(source_group, "phi", np.array(jets_phi_data).astype('<f4'))
+        append_to_dataset(source_group, "mass", np.array(jets_mass_data).astype('<f4'))
+        append_to_dataset(source_group, "btag", np.array(jets_btag_data).astype('<f4'))
+        append_to_dataset(source_group, "MASK", np.array(mask_data), dtype='|b1')
+
+        # t1_group.create_dataset("b", data=np.array(t1_b_data).astype('<i8'))
+        # t1_group.create_dataset("q1", data=np.array(t1_q1_data).astype('<i8'))
+        # t1_group.create_dataset("q2", data=np.array(t1_q2_data).astype('<i8'))
+        # t2_group.create_dataset("b", data=np.array(t2_b_data).astype('<i8'))
+        # t2_group.create_dataset("q1", data=np.array(t2_q1_data).astype('<i8'))
+        # t2_group.create_dataset("q2", data=np.array(t2_q2_data).astype('<i8'))
+
+        append_to_dataset(t1_group, "b", np.array(t1_b_data).astype('<i8'))
+        append_to_dataset(t1_group, "q1", np.array(t1_q1_data).astype('<i8'))
+        append_to_dataset(t1_group, "q2", np.array(t1_q2_data).astype('<i8'))
+        append_to_dataset(t2_group, "b", np.array(t2_b_data).astype('<i8'))
+        append_to_dataset(t2_group, "q1", np.array(t2_q1_data).astype('<i8'))
+        append_to_dataset(t2_group, "q2", np.array(t2_q2_data).astype('<i8'))
+
 
         print(count)
 
@@ -268,7 +330,7 @@ def convert_TT2L(yulei_file_path, out_file_path):
 
 
                 # start filling data
-                # check if each evt has 2 parts whose mother is t1_W and 2 for t2_W, else reject evt
+                # check if each evt has 2 parts whose mother is t1_W and 2 parts for t2_W, else reject evt
                 if ( (len(genmatched_index[evt][t1_W_lv_mask]) == 2) and (len(genmatched_index[evt][t2_W_lv_mask]) == 2) ):
 
                     # fill the t1 data
@@ -367,6 +429,12 @@ def convert_TT1L(yulei_file_path, out_file_path):
         # # Get data from infile["genpart"]: ["genpart_pt", "genpart_eta", "genpart_phi", "genpart_m", "genpart_index", "genpart_M1", "genpart_M2", "genpart_PID", "genpart_Status", "genmatched_index"]
         genpart_data = infile['genpart'][:]
         print("genpart_data dataset:", genpart_data.shape) # (10000, 12, 10)
+        # # # Get data from infile[els]: ["el_pt","el_eta","el_phi","el_m","el_ch"]
+        els_data = infile['els'][:]
+        print("els dataset:", els_data.shape) # (10000, 4, 5)
+        # # # Get data from infile[mus]: ["mu_pt","mu_eta","mu_phi","mu_m","mu_ch"]
+        mus_data = infile['mus'][:]
+        print("mus dataset:", mus_data.shape) # (10000, 4, 5)
 
         genpart_index = genpart_data[:,:,4]
         genpart_M1 = genpart_data[:,:,5]
@@ -447,7 +515,7 @@ def convert_TT1L(yulei_file_path, out_file_path):
                 # check if each evt has 2 parts whose mother is t1_W and 2 for t2_W, else reject evt
                 if ( (len(genmatched_index[evt][t1_W_child_mask]) == 2) and (len(genmatched_index[evt][t2_W_child_mask]) == 2) ):
 
-                    # distinguish hadronic or leptonic for t1 (determine t1 decay, then t2 is the other channel)
+                    # distinguish hadronic or leptonic for t1 (determine t1's decay, then t2 is the other channel)
                     t1_children_pid = genpart_PID[evt][t1_W_child_mask]
                     print(t1_children_pid)
                     # quarks_pid:1~8, leptons_pid:11~18
@@ -461,11 +529,17 @@ def convert_TT1L(yulei_file_path, out_file_path):
                         # fill in t2 data
                         t2_b_data.append(genmatched_index[evt][genpart_index[evt]==t2_b_index].item())
                         # distinguish t2_l and t2_v
-                        if abs(genpart_PID[evt][t2_W_child_mask][0])== 11 or 13:
-                            t2_l_data.append(genmatched_index[evt][t2_W_child_mask][0].item())
+                        if abs(genpart_PID[evt][t2_W_child_mask][0])== 11:
+                            t2_l_data.append(genmatched_index[evt][t2_W_child_mask][0].item()+10 if genmatched_index[evt][t2_W_child_mask][0].item() >= 0 else genmatched_index[evt][t2_W_child_mask][0].item())
                             t2_v_data.append(genmatched_index[evt][t2_W_child_mask][1].item())
-                        else:
-                            t2_l_data.append(genmatched_index[evt][t2_W_child_mask][1].item())
+                        elif abs(genpart_PID[evt][t2_W_child_mask][0])== 13:
+                            t2_l_data.append(genmatched_index[evt][t2_W_child_mask][0].item()+14 if genmatched_index[evt][t2_W_child_mask][0].item() >= 0 else genmatched_index[evt][t2_W_child_mask][0].item())
+                            t2_v_data.append(genmatched_index[evt][t2_W_child_mask][1].item())
+                        elif abs(genpart_PID[evt][t2_W_child_mask][1])== 11: 
+                            t2_l_data.append(genmatched_index[evt][t2_W_child_mask][1].item()+10 if genmatched_index[evt][t2_W_child_mask][0].item() >= 0 else genmatched_index[evt][t2_W_child_mask][0].item())
+                            t2_v_data.append(genmatched_index[evt][t2_W_child_mask][0].item())
+                        else: 
+                            t2_l_data.append(genmatched_index[evt][t2_W_child_mask][1].item()+14 if genmatched_index[evt][t2_W_child_mask][0].item() >= 0 else genmatched_index[evt][t2_W_child_mask][0].item())
                             t2_v_data.append(genmatched_index[evt][t2_W_child_mask][0].item())
 
                     else: # t1 is leptonic
@@ -474,28 +548,45 @@ def convert_TT1L(yulei_file_path, out_file_path):
                         t1_q1_data.append(genmatched_index[evt][t2_W_child_mask][0].item())
                         t1_q2_data.append(genmatched_index[evt][t2_W_child_mask][1].item())
                         
-                        # use t1 to fill the final t2 output data
+                        # use t1 to fill the final t2 output data                       
                         t2_b_data.append(genmatched_index[evt][genpart_index[evt]==t1_b_index].item())
                         # distinguish t2_l and t2_v
-                        if abs(genpart_PID[evt][t1_W_child_mask][0])== 11 or 13:
-                            t2_l_data.append(genmatched_index[evt][t1_W_child_mask][0].item())
+                        if abs(genpart_PID[evt][t1_W_child_mask][0])== 11:
+                            t2_l_data.append(genmatched_index[evt][t1_W_child_mask][0].item()+10 if genmatched_index[evt][t1_W_child_mask][0].item() >= 0 else genmatched_index[evt][t1_W_child_mask][0].item())
                             t2_v_data.append(genmatched_index[evt][t1_W_child_mask][1].item())
-                        else:
-                            t2_l_data.append(genmatched_index[evt][t1_W_child_mask][1].item())
+                        elif abs(genpart_PID[evt][t1_W_child_mask][0])== 13:
+                            t2_l_data.append(genmatched_index[evt][t1_W_child_mask][0].item()+14 if genmatched_index[evt][t1_W_child_mask][0].item() >= 0 else genmatched_index[evt][t1_W_child_mask][0].item())
+                            t2_v_data.append(genmatched_index[evt][t1_W_child_mask][1].item())
+                        elif abs(genpart_PID[evt][t1_W_child_mask][1])== 11: 
+                            t2_l_data.append(genmatched_index[evt][t1_W_child_mask][1].item()+10 if genmatched_index[evt][t1_W_child_mask][0].item() >= 0 else genmatched_index[evt][t1_W_child_mask][0].item())
                             t2_v_data.append(genmatched_index[evt][t1_W_child_mask][0].item())
+                        else: 
+                            t2_l_data.append(genmatched_index[evt][t1_W_child_mask][1].item()+14 if genmatched_index[evt][t1_W_child_mask][0].item() >= 0 else genmatched_index[evt][t1_W_child_mask][0].item())
+                            t2_v_data.append(genmatched_index[evt][t1_W_child_mask][0].item())
+
+                        
                 
                 else:
                     continue
 
 
 
-                # data for "Source" 
-                jets_pt_data.append(jets_data[evt,:,0])
-                jets_eta_data.append(jets_data[evt,:,1])
-                jets_phi_data.append(jets_data[evt,:,2])
-                jets_mass_data.append(jets_data[evt,:,3])
-                jets_btag_data.append(jets_data[evt,:,4])
-                mask_data.append(np.full((10), True, dtype='|b1'))
+
+
+                # # Merge jet, els, mus for each event
+                merged_pt = np.concatenate( (jets_data[evt,:,0], els_data[evt,:,0], mus_data[evt,:,0] ), axis=0 )
+                merged_eta = np.concatenate( (jets_data[evt,:,1], els_data[evt,:,1], mus_data[evt,:,1] ), axis=0 )
+                merged_phi = np.concatenate( (jets_data[evt,:,2], els_data[evt,:,2], mus_data[evt,:,2] ), axis=0 )
+                merged_mass = np.concatenate( (jets_data[evt,:,3], els_data[evt,:,3], mus_data[evt,:,3] ), axis=0 )
+                merged_btag = np.concatenate( (jets_data[evt,:,4], np.full(len(els_data[evt,:,0]),-1), np.full(len(els_data[evt,:,0]),-1) ), axis=0 )
+
+                # # collect the event into jet_xx_data (list)
+                jets_pt_data.append(merged_pt)
+                jets_eta_data.append(merged_eta)
+                jets_phi_data.append(merged_phi)
+                jets_mass_data.append(merged_mass)
+                jets_btag_data.append(merged_btag)
+                mask_data.append(np.full((len(merged_pt)), True, dtype='|b1'))
 
 
 
@@ -536,6 +627,12 @@ def convert_WJetsToLNu(yulei_file_path, out_file_path):
         # # # Get data from infile[jets]: ["jet_pt","jet_eta","jet_phi","jet_m","jet_btag","jet_npart","jet_flavor"]
         jets_data = infile['jets'][:]
         print("jets dataset:", jets_data.shape) # (10000, 4, 7)
+        # # # Get data from infile[els]: ["el_pt","el_eta","el_phi","el_m","el_ch"]
+        els_data = infile['els'][:]
+        print("els dataset:", els_data.shape) # (10000, 4, 5)
+        # # # Get data from infile[mus]: ["mu_pt","mu_eta","mu_phi","mu_m","mu_ch"]
+        mus_data = infile['mus'][:]
+        print("mus dataset:", mus_data.shape) # (10000, 4, 5)
 
         # # MASK: if the jets is padded or not. (You may check, but I remember True means this jet is physical and False means this jet is padded one)
         # mask_data = np.full((10000, 4), True, dtype='|b1')
@@ -587,6 +684,7 @@ def convert_WJetsToLNu(yulei_file_path, out_file_path):
             # # if W doesn't have two children, reject event
             if len(W_children_pid)<2:
                 continue
+
             # # distinguish l, v (bigger is v, smaller is l)
             if abs(W_children_pid[0]) > abs(W_children_pid[1]):
                 v_data.append(W_children_genmatched_idx[0])
@@ -594,6 +692,20 @@ def convert_WJetsToLNu(yulei_file_path, out_file_path):
             else:
                 v_data.append(W_children_genmatched_idx[1])
                 l_data.append(W_children_genmatched_idx[0])
+
+            # # distinguish t2_l and t2_v
+            # if abs(genpart_PID[evt][t2_W_child_mask][0])== 11:
+            #     t2_l_data.append(genmatched_index[evt][t2_W_child_mask][0].item()+10 if genmatched_index[evt][t2_W_child_mask][0].item() >= 0 else genmatched_index[evt][t2_W_child_mask][0].item())
+            #     t2_v_data.append(genmatched_index[evt][t2_W_child_mask][1].item())
+            # elif abs(genpart_PID[evt][t2_W_child_mask][0])== 13:
+            #     t2_l_data.append(genmatched_index[evt][t2_W_child_mask][0].item()+14 if genmatched_index[evt][t2_W_child_mask][0].item() >= 0 else genmatched_index[evt][t2_W_child_mask][0].item())
+            #     t2_v_data.append(genmatched_index[evt][t2_W_child_mask][1].item())
+            # elif abs(genpart_PID[evt][t2_W_child_mask][1])== 11: 
+            #     t2_l_data.append(genmatched_index[evt][t2_W_child_mask][1].item()+10 if genmatched_index[evt][t2_W_child_mask][0].item() >= 0 else genmatched_index[evt][t2_W_child_mask][0].item())
+            #     t2_v_data.append(genmatched_index[evt][t2_W_child_mask][0].item())
+            # else: 
+            #     t2_l_data.append(genmatched_index[evt][t2_W_child_mask][1].item()+14 if genmatched_index[evt][t2_W_child_mask][0].item() >= 0 else genmatched_index[evt][t2_W_child_mask][0].item())
+            #     t2_v_data.append(genmatched_index[evt][t2_W_child_mask][0].item())
 
             print(W_children_pid)
 
@@ -629,20 +741,26 @@ def convert_WJetsToLNu(yulei_file_path, out_file_path):
 
 if __name__ == '__main__':
 
-    # # TTH
+    yulei_directory = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data'
+
+    # TTH
     # TTH_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/TTHadronics_722439.h5'
-    # TTH_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TTHadronics_722439_omninet_10jets.h5'    
-    # convert_TTHadronics(TTH_yulei_file_path, TTH_out_file_path)
+    TTH_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TTHadronics_All_1102.h5'
+    for i in range(11):
+        directory = os.path.join(yulei_directory, f"run_yulei_{i}")
+
+        for file_path in glob.glob(os.path.join(directory, 'TTH*')):
+            convert_TTHadronics(file_path, TTH_out_file_path)
 
     # # TT1L
-    # TT1L_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/TT1L_367772000.h5'
-    # TT1L_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TT1L_367772000_omninet_10jets.h5' 
+    # TT1L_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/TT1L_722439.h5'
+    # TT1L_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TT1L_722439_omninet_10jets.h5' 
     # convert_TT1L(TT1L_yulei_file_path, TT1L_out_file_path)
 
-    # TT2L: 
-    TT2L_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/TT2L_722439.h5'
-    TT2L_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TT2L_722439_omninet_10jets.h5' 
-    convert_TT2L(TT2L_yulei_file_path, TT2L_out_file_path)
+    # # TT2L: 
+    # TT2L_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/TT2L_722439.h5'
+    # TT2L_out_file_path = '/pscratch/sd/w/weipow/OmniNet_Data/TT2L_722439_omninet_10jets.h5' 
+    # convert_TT2L(TT2L_yulei_file_path, TT2L_out_file_path)
 
     # WJetsToLNu: 
     # WJetsToLNu_yulei_file_path = '/global/cfs/cdirs/m2616/avencast/Event_Level_Analysis/data/run_yulei_2/WJetsToLNu_367772000.h5'

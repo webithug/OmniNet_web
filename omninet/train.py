@@ -10,6 +10,7 @@ from pytorch_lightning.profilers import PyTorchProfiler
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks.progress.rich_progress import _RICH_AVAILABLE
 from pytorch_lightning.loggers.wandb import _WANDB_AVAILABLE, WandbLogger
+from pytorch_lightning.strategies import DDPStrategy
 
 from pytorch_lightning.callbacks import (
     LearningRateMonitor,
@@ -174,10 +175,14 @@ def main(
         profiler = PyTorchProfiler(emit_nvtx=True)
 
     # Create the final pytorch-lightning manager
+    
+    print(f"num of gpu: {options.num_gpu}!!!!!")
+
     trainer = pl.Trainer(
         accelerator="gpu" if options.num_gpu > 0 else "auto",
         devices=options.num_gpu if options.num_gpu > 0 else "auto",
-        strategy="ddp" if options.num_gpu > 1 else "auto",
+        # strategy="ddp" if options.num_gpu > 1 else "auto",
+        strategy=DDPStrategy(find_unused_parameters=True) if options.num_gpu > 1 else "auto", # need this when using multiple gpu
         precision="16-mixed" if fp16 else "32-true",
 
         gradient_clip_val=options.gradient_clip if options.gradient_clip > 0 else None,
@@ -188,6 +193,8 @@ def main(
         profiler=profiler,
         callbacks=callbacks
     )
+
+    print("Trainer setup done")
 
     # Save the current hyperparameters to a json file in the checkpoint directory
     if master:
@@ -201,6 +208,8 @@ def main(
 
 
     logger.watch(model, log = "all", log_freq = 10)
+
+    print("Start trainer.fit")
     trainer.fit(model, ckpt_path=checkpoint)
     # -------------------------------------------------------------------------------------------------------
 
