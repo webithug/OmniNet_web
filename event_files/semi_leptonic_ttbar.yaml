@@ -28,19 +28,14 @@ EVENT:
     - q2
     - b
   t2:
-    - q1
-    - q2
+    - l
     - b
 
 # ---------------------------------------------------------
 # REQUIRED KEY - PERMUTATIONS - List of valid permutations.
 # ---------------------------------------------------------
 PERMUTATIONS:
-    EVENT:
-      - [ t1, t2 ]
     t1:
-      - [ q1, q2 ]
-    t2:
       - [ q1, q2 ]
 
 

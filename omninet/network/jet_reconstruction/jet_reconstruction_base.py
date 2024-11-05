@@ -4,7 +4,7 @@ import torch
 from torch import nn
 
 # noinspection PyProtectedMember
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, DistributedSampler
 
 from omninet.options import Options
 from omninet.dataset.jet_reconstruction_dataset import JetReconstructionDataset
@@ -192,14 +192,32 @@ class JetReconstructionBase(pl.LightningModule):
 
         return [optimizer], [scheduler]
 
+    # def train_dataloader(self) -> DataLoader:
+    #     return self.dataloader(self.training_dataset, shuffle=True, drop_last=True, **self.dataloader_options)
+
+    # def val_dataloader(self) -> DataLoader:
+    #     return self.dataloader(self.validation_dataset, drop_last=True, **self.dataloader_options)
+
+    # def test_dataloader(self) -> DataLoader:
+    #     if self.testing_dataset is None:
+    #         raise ValueError("Testing dataset not provided.")
+        
+    #     return self.dataloader(self.testing_dataset, **self.dataloader_options)
+
+    # use data sampler for multi gpu
     def train_dataloader(self) -> DataLoader:
-        return self.dataloader(self.training_dataset, shuffle=True, drop_last=True, **self.dataloader_options)
+        print("running train_dataloader")
+        # sampler = DistributedSampler(self.training_dataset) if torch.distributed.is_initialized() else None
+        sampler = DistributedSampler(self.training_dataset)
+        return self.dataloader(self.training_dataset, sampler=sampler, shuffle=(sampler is None), drop_last=True, **self.dataloader_options)
 
     def val_dataloader(self) -> DataLoader:
-        return self.dataloader(self.validation_dataset, drop_last=True, **self.dataloader_options)
+        sampler = DistributedSampler(self.validation_dataset, shuffle=False) if torch.distributed.is_initialized() else None
+        return self.dataloader(self.validation_dataset, sampler=sampler, drop_last=True, **self.dataloader_options)
 
     def test_dataloader(self) -> DataLoader:
         if self.testing_dataset is None:
             raise ValueError("Testing dataset not provided.")
-
-        return self.dataloader(self.testing_dataset, **self.dataloader_options)
+        
+        sampler = DistributedSampler(self.testing_dataset, shuffle=False) if torch.distributed.is_initialized() else None
+        return self.dataloader(self.testing_dataset, sampler=sampler, **self.dataloader_options)
