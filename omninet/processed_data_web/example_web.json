@@ -7,7 +7,7 @@
     "position_embedding_dim": 32,
 
     "num_embedding_layers": 2,
-    "num_encoder_layers": 2,
+    "num_encoder_layers": 1,
 
     "num_branch_embedding_layers": 1,
     "num_branch_encoder_layers": 1,
@@ -31,8 +31,8 @@
 
     "skip_connections": true,
     "initial_embedding_skip_connections": true,
-    "event_info_file": "/global/homes/w/weipow/OmniNet_web/event_files/full_hadronic_ttbar.yaml",
-    "training_file": "/global/cfs/cdirs/m2616/tihsu/Event_Level_Analysis/OmniNet_input/train_full_run/merged_run/TTHadronics.h5",
+    "event_info_file": "/global/homes/w/weipow/OmniNet_web/event_files/full_leptonic_ttbar.yaml",
+    "training_file": "/global/cfs/cdirs/m2616/tihsu/Event_Level_Analysis/OmniNet_input/train_full_run/merged_run/TT2L.h5",
 
     "normalize_features": true,
     "limit_to_num_jets": 0,

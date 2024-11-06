@@ -7,6 +7,7 @@ import numpy as np
 
 import torch
 from torch import Tensor
+import torch.distributed
 from torch.utils.data import Dataset
 
 from omninet.dataset.types import SpecialKey, NDArray, Batch, AssignmentTargets, Source, ArrayLike
@@ -164,6 +165,13 @@ class JetReconstructionDataset(Dataset):
         -------
         np.ndarray or torch.Tensor
         """
+
+        # use distributed for multigpu
+        # if torch.distributed.is_available() and not torch.distributed.is_initialized():
+        #     torch.distributed.init_process_group(backend="nccl" if torch.cuda.is_available() else "gloo")
+        rank = torch.distributed.get_rank() if torch.distributed.is_initialized() else 0
+        world_size = torch.distributed.get_world_size() if torch.distributed.is_initialized else 1
+
         # In the float case, we just generate the list with the appropriate bounds
         if isinstance(limit_index, float):
             limit_index = (0.0, limit_index) if limit_index > 0 else (1.0 + limit_index, 1.0)
@@ -181,9 +189,14 @@ class JetReconstructionDataset(Dataset):
 
             limit_index = limit_index[lower_index:upper_index]
 
+            # # split the indices for each gpu
+            limit_index = np.array_split(limit_index, world_size)[rank]
+
         # Convert to numpy array for simplicity
         if isinstance(limit_index, Tensor):
             limit_index = limit_index.numpy()
+
+        
 
         # Make sure the resulting index array is sorted for faster loading.
         return np.sort(limit_index)

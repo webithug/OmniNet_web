@@ -12,24 +12,25 @@ INPUTS:
       eta: normalize
       phi: normalize
       btag: none
+      isLepton: none
 
   # ---------------------------------------------------------------------
   # REQUIRED - GLOBAL - inputs which will have a single vector per event.
   # ---------------------------------------------------------------------
   GLOBAL:
-
+    Met:
+      met: log_normalize
+      met_phi: normalize
 
 # ----------------------------------------------------------------------
 # REQUIRED - EVENT - Complete list of resonance particles and daughters.
 # ----------------------------------------------------------------------
 EVENT:
   t1:
-    - q1
-    - q2
+    - l
     - b
   t2:
-    - q1
-    - q2
+    - l
     - b
 
 # ---------------------------------------------------------
@@ -38,10 +39,6 @@ EVENT:
 PERMUTATIONS:
     EVENT:
       - [ t1, t2 ]
-    t1:
-      - [ q1, q2 ]
-    t2:
-      - [ q1, q2 ]
 
 
 # ------------------------------------------------------------------------------
