@@ -22,7 +22,7 @@ An example demonstrating these new features may be found here: [docs/TTH.md](doc
 You can install this package to use it outside of the repository after cloning.
 
 ```bash
-git clone https://github.com/tihsu99/OmniNet
+git clone https://github.com/UW-EPE-ML/OmniNet -b OmniLearn
 cd OmniNet
 pip install .
 ```
@@ -174,5 +174,14 @@ If you use this software for a publication, please cite the following:
 	publisher={SciPost},
 	doi={10.21468/SciPostPhys.12.5.178},
 	url={https://scipost.org/10.21468/SciPostPhys.12.5.178},
+}
+@misc{mikuni2024omnilearnmethodsimultaneouslyfacilitate,
+      title={OmniLearn: A Method to Simultaneously Facilitate All Jet Physics Tasks}, 
+      author={Vinicius Mikuni and Benjamin Nachman},
+      year={2024},
+      eprint={2404.16091},
+      archivePrefix={arXiv},
+      primaryClass={hep-ph},
+      url={https://arxiv.org/abs/2404.16091}, 
 }
 ```
