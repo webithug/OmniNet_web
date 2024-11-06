@@ -206,9 +206,14 @@ class JetReconstructionBase(pl.LightningModule):
 
     # use data sampler for multi gpu
     def train_dataloader(self) -> DataLoader:
-        print("running train_dataloader")
-        # sampler = DistributedSampler(self.training_dataset) if torch.distributed.is_initialized() else None
-        sampler = DistributedSampler(self.training_dataset)
+
+        if torch.distributed.is_initialized():
+            print("running train_dataloader")
+        sampler = DistributedSampler(self.training_dataset) if torch.distributed.is_initialized() else None
+
+        # Verify unique subset of data per GPU
+        # print(f"Rank {torch.distributed.get_rank()} - Data indices: {sampler.indices[:10]}")  # Print first 10 indices 
+            
         return self.dataloader(self.training_dataset, sampler=sampler, shuffle=(sampler is None), drop_last=True, **self.dataloader_options)
 
     def val_dataloader(self) -> DataLoader:

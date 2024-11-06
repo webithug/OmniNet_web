@@ -12,6 +12,10 @@ from pytorch_lightning.callbacks.progress.rich_progress import _RICH_AVAILABLE
 from pytorch_lightning.loggers.wandb import _WANDB_AVAILABLE, WandbLogger
 from pytorch_lightning.strategies import DDPStrategy
 
+import torch.distributed
+import os
+import logging 
+
 from pytorch_lightning.callbacks import (
     LearningRateMonitor,
     ModelCheckpoint,
@@ -64,6 +68,26 @@ def main(
         limit_dataset: Optional[float],
         random_seed: int,
     ):
+
+    # # make log file for terminal output
+    # log_dir = os.getcwd() if log_dir is None else log_dir
+    # log_file = os.path.join(log_dir, f"{name}_output.log")
+    # logging.basicConfig(
+    #     filename=log_file,
+    #     filemode='w',
+    #     level=logging.INFO,
+    #     format='%(asctime)s - %(levelname)s - %(message)s'
+    # )
+
+    # initialize torch.distributed
+    local_rank = int(os.environ["LOCAL_RANK"])
+    torch.cuda.set_device(local_rank)
+    torch.distributed.init_process_group(                                   
+    	backend="nccl",                                         
+   		init_method="env://",
+    	rank=int(os.environ["RANK"]),
+        world_size=int(os.environ["WORLD_SIZE"])
+    )    
 
     # Whether or not this script version is the master run or a worker
     master = True
@@ -281,3 +305,5 @@ if __name__ == '__main__':
                         help="Profile network for a single training epoch.")
 
     main(**parser.parse_args().__dict__)
+
+
