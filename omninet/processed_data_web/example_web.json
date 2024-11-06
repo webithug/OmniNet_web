@@ -9,6 +9,8 @@
     "num_embedding_layers": 2,
     "num_encoder_layers": 1,
 
+    "PET_num_layers": 4,
+
     "num_branch_embedding_layers": 1,
     "num_branch_encoder_layers": 1,
 
