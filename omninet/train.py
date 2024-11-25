@@ -210,7 +210,7 @@ def main(
         accelerator="gpu" if options.num_gpu > 0 else "auto",
         devices=options.num_gpu if options.num_gpu > 0 else "auto",
         # strategy="ddp" if options.num_gpu > 1 else "auto",
-        strategy=DDPStrategy(find_unused_parameters=True) if options.num_gpu > 1 else "auto", # need this when using multiple gpu
+        strategy=DDPStrategy(find_unused_parameters=True) if options.num_gpu > 1 else "auto", 
         precision="16-mixed" if fp16 else "32-true",
 
         gradient_clip_val=options.gradient_clip if options.gradient_clip > 0 else None,
@@ -219,7 +219,10 @@ def main(
 
         logger=logger,
         profiler=profiler,
-        callbacks=callbacks
+        callbacks=callbacks,
+
+        num_sanity_val_steps=0 if options.num_gpu > 0 else 2,
+        log_every_n_steps=1
     )
 
     print("Trainer setup done")

@@ -10,6 +10,8 @@ from omninet.options import Options
 from omninet.dataset.evaluator import SymmetricEvaluator
 from omninet.network.jet_reconstruction.jet_reconstruction_network import JetReconstructionNetwork
 import wandb
+import matplotlib.pyplot as plt
+
 
 class JetReconstructionValidation(JetReconstructionNetwork):
     def __init__(self, options: Options, torch_script: bool = False):
@@ -116,21 +118,52 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             # print(f"source eta: {sources[0][0][:,:,2]}")
             # print(f"source phi: {sources[0][0][:,:,3]}") 
 
-            # get masses of all jets
-            jet_masses = sources[0][0][:,:,0].expand(num_targets, -1, -1)
-            print(f"jet masses: {jet_masses}")
+            # get 4-vector of all jets
+            jets_mass = sources[0][0][:,:,0].expand(num_targets, -1, -1)
+            jets_pt = sources[0][0][:,:,1].expand(num_targets, -1, -1)
+            jets_eta = sources[0][0][:,:,2].expand(num_targets, -1, -1)
+            jets_phi = sources[0][0][:,:,3].expand(num_targets, -1, -1)
+            print(f"jet mass: {jets_mass}")
 
-            # get the masses of predicted jets
-            jet_masses = jet_masses.to(permuted_jet_pred.device)
-            jet_masses_pred = torch.gather(jet_masses, 2, permuted_jet_pred)
+            # get the 4-vector of predicted jets
+            jets_mass = jets_mass.to(permuted_jet_pred.device)
+            jets_pt = jets_pt.to(permuted_jet_pred.device)
+            jets_eta = jets_eta.to(permuted_jet_pred.device)
+            jets_phi = jets_phi.to(permuted_jet_pred.device)
+            jets_mass_pred = torch.gather(jets_mass, 2, permuted_jet_pred)
+            jets_pt_pred = torch.gather(jets_pt, 2, permuted_jet_pred)
+            jets_eta_pred = torch.gather(jets_eta, 2, permuted_jet_pred)
+            jets_phi_pred = torch.gather(jets_phi, 2, permuted_jet_pred)
 
-            print(f"jet mass pred: {jet_masses_pred}")
+            print(f"jet mass pred: {jets_mass_pred}")
+
+            # reconstruct four-momentum of jets
+            jets_energy = torch.sqrt(jets_mass_pred**2 + jets_pt_pred**2 * torch.cosh(jets_eta_pred)**2)
+            jets_px = jets_pt_pred * torch.cos(jets_phi_pred)
+            jets_py = jets_pt_pred * torch.sin(jets_phi_pred)
+            jets_pz = jets_pt_pred * torch.sinh(jets_eta_pred)
+            jets_four_momentum = torch.stack( (jets_energy, jets_px, jets_py, jets_pz), dim=-1) # (num_targets, num_events, num_jets, 4)
+
+            print(f"jets_four_momentum: {jets_four_momentum}") 
             
-            
-            
+            # reconstruct four-momentum of resonance
+            resonance_four_momentum = jets_four_momentum.sum(dim=2) # (num_targets, num_events, 1, 4)
+            resonance_energy = resonance_four_momentum[..., 0]
+            resonance_px = resonance_four_momentum[..., 1]
+            resonance_py = resonance_four_momentum[..., 2]
+            resonance_pz = resonance_four_momentum[..., 3]
 
+            # resonance_mass^2 = E^2 = p^2
+            resonance_mass = torch.sqrt(resonance_energy**2 - resonance_px**2 - resonance_py**2 - resonance_pz**2) # (num_targets, num_events)
+            print(f"t1 mass: {resonance_mass[0]}") 
+            print(f"t2 mass: {resonance_mass[1]}") 
 
-        raise Exception("done") 
+            # for target_idx in range(num_targets):
+            #     self.log({
+            #         f"resonance_mass_histogram_target_{target_idx}": wandb.Histogram(resonance_mass[target_idx].cpu().numpy())
+            #     })
+
+        # raise Exception("done") 
 
 
 
@@ -145,6 +178,9 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             metrics.update({f"particle/accuracy_{i}_of_{j}": (particle_accuracies[num_particles == j] >= i).mean()
                             for j in range(1, num_targets + 1)
                             for i in range(1, j + 1)})
+
+            metrics.update({f"target{i}_mass": resonance_mass[i-1]
+                            for i in range(1, num_targets + 1)})
 
         particle_scores = particle_scores.ravel()
         particle_targets = permuted_masks.ravel()
@@ -228,9 +264,31 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             accuracy = (classifications[key] == classification_targets[key])
             self.log(f"CLASSIFICATION/{key}_accuracy", accuracy.mean(), sync_dist=True)
 
-        for name, value in metrics.items():
-            if not np.isnan(value):
-                self.log(name, value, sync_dist=True)
+        if self.trainer.is_global_zero: 
+            for name, value in metrics.items():
+                if isinstance(value, torch.Tensor):
+                    print("a tensor!")
+                    print(f"{name}: {value}")
+                    self.log(f"{name}_mean", value.mean().item(), sync_dist=True)
+                    self.log(f"{name}_std", value.std().item(), sync_dist=True)
+
+                    if self.current_epoch % 10 == 1: # plot mass hist every 10 epochs
+                        # flatten and convert tensor to numpy
+                        flat_data = value.cpu().numpy().flatten()
+
+                        # plot the histogram as an image
+                        plt.figure()
+                        plt.hist(flat_data, bins=50, range=(flat_data.min(), flat_data.max()))
+                        plt.title(name)
+                        plt.xlabel("Mass")
+                        plt.ylabel("Counts")
+
+                        # save the plot to W&B as an image
+                        self.logger.experiment.log({name: wandb.Image(plt)}, commit=False)
+
+                    
+                elif not np.isnan(value):
+                    self.log(name, value, sync_dist=True)
 
         return metrics
 
