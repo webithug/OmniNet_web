@@ -101,6 +101,8 @@ class JetReconstructionDataset(Dataset):
                 (input_name, create_source_input(self.event_info, file, input_name, self.num_events, limit_index))
                 for input_name in self.event_info.input_names
             ))
+            # for input_name in self.event_info.input_names:
+            #     print(f"input_name: {input_name}")
 
             # Compute the jet offsets for different input sources if we are reconstructing more than one type of object.
             self.source_offsets = torch.tensor([
@@ -166,11 +168,11 @@ class JetReconstructionDataset(Dataset):
         np.ndarray or torch.Tensor
         """
 
-        # use distributed for multigpu
+        # # use distributed for multigpu
         # if torch.distributed.is_available() and not torch.distributed.is_initialized():
         #     torch.distributed.init_process_group(backend="nccl" if torch.cuda.is_available() else "gloo")
-        rank = torch.distributed.get_rank() if torch.distributed.is_initialized() else 0
-        world_size = torch.distributed.get_world_size() if torch.distributed.is_initialized else 1
+        # rank = torch.distributed.get_rank() if torch.distributed.is_initialized() else 0
+        # world_size = torch.distributed.get_world_size() if torch.distributed.is_initialized else 1
 
         # In the float case, we just generate the list with the appropriate bounds
         if isinstance(limit_index, float):
@@ -190,7 +192,8 @@ class JetReconstructionDataset(Dataset):
             limit_index = limit_index[lower_index:upper_index]
 
             # # split the indices for each gpu
-            limit_index = np.array_split(limit_index, world_size)[rank]
+            # limit_index = np.array_split(limit_index, world_size)[rank]
+            
 
         # Convert to numpy array for simplicity
         if isinstance(limit_index, Tensor):

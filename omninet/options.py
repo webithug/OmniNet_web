@@ -122,7 +122,7 @@ class Options(Namespace):
         self.enable_local_embedding: bool = True
         self.num_local_layer: int = 3
         self.local_point_index: List = [2,3]
-        self.local_Krank: int = 2
+        self.local_Krank: int = 3
 
         # PET setting
         self.PET_num_heads: int = 4 

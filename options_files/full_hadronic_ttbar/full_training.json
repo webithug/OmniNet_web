@@ -29,8 +29,8 @@
 
     "skip_connections": true,
     "initial_embedding_skip_connections": true,
-    "event_info_file": "./event_files/full_hadronic_ttbar.yaml",
-    "training_file": "./data/full_hadronic_ttbar/training.h5",
+    "event_info_file": "/global/homes/w/weipow/OmniNet_web/event_files/full_hadronic_ttbar_example.yaml",
+    "training_file": "/global/homes/w/weipow/SPANet/data/full_hadronic_ttbar/training.h5",
 
     "normalize_features": true,
     "limit_to_num_jets": 0,

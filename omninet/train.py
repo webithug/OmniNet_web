@@ -78,6 +78,7 @@ def main(
     #     level=logging.INFO,
     #     format='%(asctime)s - %(levelname)s - %(message)s'
     # )
+    # print(f"log file {log_file}")
 
     # initialize torch.distributed
     local_rank = int(os.environ["LOCAL_RANK"])
@@ -171,7 +172,10 @@ def main(
     # Construct the logger for this training run. Logs will be saved in {logdir}/{name}/version_i
     log_dir = getcwd() if log_dir is None else log_dir
     logger = (
-        WandbLogger(name=name, save_dir=log_dir)
+        WandbLogger(name=name, save_dir=log_dir, 
+                    # project="single_process_downstream_tasks", 
+                    # entity="ytchou97-university-of-washington"
+                    )
         if _WANDB_AVAILABLE else
         TensorBoardLogger(save_dir=log_dir, name=name)
     )
@@ -223,6 +227,7 @@ def main(
     # Save the current hyperparameters to a json file in the checkpoint directory
     if master:
         print(f"Training Version {trainer.logger.version}")
+        print(f"trainer.log_dir {trainer.log_dir}")
         makedirs(trainer.log_dir, exist_ok=True) # Fix bugs for WanDB Logger (has save_dir but not log_dir)
 
         with open(f"{trainer.log_dir}/options.json", 'w') as json_file:

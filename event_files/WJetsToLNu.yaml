@@ -13,11 +13,15 @@ INPUTS:
       eta: normalize
       phi: normalize
       btag: none
+      isLepton: none
 
   # ---------------------------------------------------------------------
   # REQUIRED - GLOBAL - inputs which will have a single vector per event.
   # ---------------------------------------------------------------------
   GLOBAL:
+    Met:
+      met: log_normalize
+      met_phi: normalize
 
 
 # ----------------------------------------------------------------------

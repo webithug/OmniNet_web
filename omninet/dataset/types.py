@@ -181,6 +181,7 @@ class DistributionInfo(OrderedDict):
     def __add__(self, other):
         result = DistributionInfo()
         for key in self:
+            print(f"key in self: {key}")
             if key in other:
                 result[key] = Source(
                     data=self[key].data + other[key].data,
@@ -189,6 +190,7 @@ class DistributionInfo(OrderedDict):
             else:
                 result[key] = self[key]
         for key in other:
+            print(f"key in other: {key}")
             if key not in result:
                 result[key] = other[key]
         return result
@@ -196,6 +198,7 @@ class DistributionInfo(OrderedDict):
     def __sub__(self, other):
         result = DistributionInfo()
         for key in self:
+            print(f"key in self: {key}")
             if key in other:
                 result[key] = Source(
                     data=self[key].data - other[key].data,
@@ -211,6 +214,7 @@ class DistributionInfo(OrderedDict):
     def __rsub__(self, other):
         result = DistributionInfo()
         for key in self:
+            print(f"key in self: {key}")
             if key in other:
                 result[key] = Source(
                     data=other[key].data - self[key].data,
@@ -226,6 +230,7 @@ class DistributionInfo(OrderedDict):
     def __mul__(self, scalar):
         result = DistributionInfo()
         for key in self:
+            print(f"key in self: {key}")
             result[key] = Source(
                 data=self[key].data * scalar,
                 mask=self[key].mask
