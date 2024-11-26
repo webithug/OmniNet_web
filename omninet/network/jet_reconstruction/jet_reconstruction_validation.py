@@ -86,14 +86,14 @@ class JetReconstructionValidation(JetReconstructionNetwork):
         permuted_masks = torch.gather(torch.from_numpy(stacked_masks), 0, chosen_permutations).numpy()
 
         # permute jet_predictions according to chosen_permutation
-        jet_pred_tensor = torch.tensor(jet_predictions)
+        jet_pred_tensor = torch.tensor(np.array(jet_predictions))
         chosen_permutations = chosen_permutations.unsqueeze(-1) # add an extra dim 
         permuted_jet_pred = torch.gather(jet_pred_tensor, 0, chosen_permutations.expand(-1, -1, jet_pred_tensor.size(-1))) # use gather to permute data along one dim
 
         # print(f"jet predictions original: {jet_predictions}")
-        print(f"jet predictions tensor: {jet_pred_tensor}")
+        # print(f"jet predictions tensor: {jet_pred_tensor}")
         # print(f"chosen permutation: {chosen_permutations}")
-        print(f"jet predictions permuted: {permuted_jet_pred}") #[num_targets, evts, jets]
+        # print(f"jet predictions permuted: {permuted_jet_pred}") #[num_targets, evts, jets]
         
         # print(f"chosen permutation: {chosen_permutations}") # each event has its own permutation 
 
@@ -110,11 +110,18 @@ class JetReconstructionValidation(JetReconstructionNetwork):
 
         # compute mass plots using jet_pred_permuted and sources
         if sources is not None:
-            # print(f"sources: {type(sources)}")
-            # print(f"sources len: {len(sources)}")
-            # print(f"sources[0] : {sources[0][0]}") #[evt, jets, feats]
+            print(f"sources: {type(sources[0])}")
+            # print(f"sources len: {len(sources)}") # SEQUENTIAL data and GLOBAL data
+            # source_data = sources[0][0]
+            # source_mask = sources[0][1]
+            # print(f"data: {source_data}") 
+            # print(f"mask: {source_mask}") 
+            # masked_data = source_data[source_mask]
+            # print(f"masked data: {masked_data}") # should i use the masked data?
+
+            # print(f"sources[0][0] : {sources[0][0]}") #[evt, jets, feats]
             # print(f"source mass: {sources[0][0][:,:,0]}") #[evts, jet_mass]
-            # print(f"source pt: {sources[0][0][:,:,1]}")
+            # print(f"source pt: {sources[0][0][:,:,1]}") 
             # print(f"source eta: {sources[0][0][:,:,2]}")
             # print(f"source phi: {sources[0][0][:,:,3]}") 
 
@@ -123,7 +130,10 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             jets_pt = sources[0][0][:,:,1].expand(num_targets, -1, -1)
             jets_eta = sources[0][0][:,:,2].expand(num_targets, -1, -1)
             jets_phi = sources[0][0][:,:,3].expand(num_targets, -1, -1)
-            print(f"jet mass: {jets_mass}")
+            # print(f"jet mass: {jets_mass}")
+
+            # denormalize the 4-vector
+            # ...
 
             # get the 4-vector of predicted jets
             jets_mass = jets_mass.to(permuted_jet_pred.device)
@@ -135,7 +145,7 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             jets_eta_pred = torch.gather(jets_eta, 2, permuted_jet_pred)
             jets_phi_pred = torch.gather(jets_phi, 2, permuted_jet_pred)
 
-            print(f"jet mass pred: {jets_mass_pred}")
+            # print(f"jet mass pred: {jets_mass_pred}")
 
             # reconstruct four-momentum of jets
             jets_energy = torch.sqrt(jets_mass_pred**2 + jets_pt_pred**2 * torch.cosh(jets_eta_pred)**2)
@@ -144,7 +154,7 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             jets_pz = jets_pt_pred * torch.sinh(jets_eta_pred)
             jets_four_momentum = torch.stack( (jets_energy, jets_px, jets_py, jets_pz), dim=-1) # (num_targets, num_events, num_jets, 4)
 
-            print(f"jets_four_momentum: {jets_four_momentum}") 
+            # print(f"jets_four_momentum: {jets_four_momentum}") 
             
             # reconstruct four-momentum of resonance
             resonance_four_momentum = jets_four_momentum.sum(dim=2) # (num_targets, num_events, 1, 4)
@@ -155,13 +165,9 @@ class JetReconstructionValidation(JetReconstructionNetwork):
 
             # resonance_mass^2 = E^2 = p^2
             resonance_mass = torch.sqrt(resonance_energy**2 - resonance_px**2 - resonance_py**2 - resonance_pz**2) # (num_targets, num_events)
-            print(f"t1 mass: {resonance_mass[0]}") 
-            print(f"t2 mass: {resonance_mass[1]}") 
+            # print(f"t1 mass: {resonance_mass[0]}") 
+            # print(f"t2 mass: {resonance_mass[1]}") 
 
-            # for target_idx in range(num_targets):
-            #     self.log({
-            #         f"resonance_mass_histogram_target_{target_idx}": wandb.Histogram(resonance_mass[target_idx].cpu().numpy())
-            #     })
 
         # raise Exception("done") 
 
@@ -264,31 +270,30 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             accuracy = (classifications[key] == classification_targets[key])
             self.log(f"CLASSIFICATION/{key}_accuracy", accuracy.mean(), sync_dist=True)
 
-        if self.trainer.is_global_zero: 
-            for name, value in metrics.items():
-                if isinstance(value, torch.Tensor):
-                    print("a tensor!")
-                    print(f"{name}: {value}")
-                    self.log(f"{name}_mean", value.mean().item(), sync_dist=True)
-                    self.log(f"{name}_std", value.std().item(), sync_dist=True)
+        for name, value in metrics.items():
+            if isinstance(value, torch.Tensor): 
+                # print("a tensor!")
+                # print(f"{name}: {value}")
+                self.log(f"{name}_mean", value.mean().item(), sync_dist=True)
+                self.log(f"{name}_std", value.std().item(), sync_dist=True)
 
-                    if self.current_epoch % 10 == 1: # plot mass hist every 10 epochs
-                        # flatten and convert tensor to numpy
-                        flat_data = value.cpu().numpy().flatten()
+                if self.current_epoch % 10 == 1: # plot mass hist every 10 epochs
+                    # flatten and convert tensor to numpy
+                    flat_data = value.cpu().numpy().flatten()
 
-                        # plot the histogram as an image
-                        plt.figure()
-                        plt.hist(flat_data, bins=50, range=(flat_data.min(), flat_data.max()))
-                        plt.title(name)
-                        plt.xlabel("Mass")
-                        plt.ylabel("Counts")
+                    # plot the histogram as an image
+                    plt.figure()
+                    plt.hist(flat_data, bins=50, range=(flat_data.min(), flat_data.max()))
+                    plt.title(name)
+                    plt.xlabel("Mass")
+                    plt.ylabel("Counts")
 
-                        # save the plot to W&B as an image
-                        self.logger.experiment.log({name: wandb.Image(plt)}, commit=False)
+                    # save the plot to W&B as an image
+                    self.logger.experiment.log({name: wandb.Image(plt)}, commit=False)
 
-                    
-                elif not np.isnan(value):
-                    self.log(name, value, sync_dist=True)
+                
+            elif not np.isnan(value):
+                self.log(name, value, sync_dist=True)
 
         return metrics
 
