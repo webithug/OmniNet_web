@@ -112,8 +112,8 @@ class JetReconstructionValidation(JetReconstructionNetwork):
         if sources is not None:
             print(f"sources: {type(sources[0])}")
             # print(f"sources len: {len(sources)}") # SEQUENTIAL data and GLOBAL data
-            # source_data = sources[0][0]
-            # source_mask = sources[0][1]
+            source_data = sources[0][0]
+            source_mask = sources[0][1]
             # print(f"data: {source_data}") 
             # print(f"mask: {source_mask}") 
             # masked_data = source_data[source_mask]
@@ -125,18 +125,28 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             # print(f"source eta: {sources[0][0][:,:,2]}")
             # print(f"source phi: {sources[0][0][:,:,3]}") 
 
-            # get 4-vector of all jets
-            jets_mass = sources[0][0][:,:,0].expand(num_targets, -1, -1)
-            jets_pt = sources[0][0][:,:,1].expand(num_targets, -1, -1)
-            jets_eta = sources[0][0][:,:,2].expand(num_targets, -1, -1)
-            jets_phi = sources[0][0][:,:,3].expand(num_targets, -1, -1)
-            # print(f"jet mass: {jets_mass}")
+            # denormalize the source data
+            num_vec_normalizer = self.num_vector_normalizer
+            # print(f"num_vec_normalizer: {num_vec_normalizer}")
+            # print(f"source after norm: {source_data}")
+            source_denorm = num_vec_normalizer[0].denormalize(source_data, source_mask)
+            # print(f"source before norm: {source_denorm}")
 
-            # denormalize the 4-vector
-            # ...
+            # get 4-vector of all jets
+            jets_mass = source_denorm[:,:,0].expand(num_targets, -1, -1)
+            jets_pt = source_denorm[:,:,1].expand(num_targets, -1, -1)
+            jets_eta = source_denorm[:,:,2].expand(num_targets, -1, -1)
+            jets_phi = source_denorm[:,:,3].expand(num_targets, -1, -1)
+            print(f"jet mass: {jets_mass}")
+            print(f"jets_pt: {jets_pt}")
+            print(f"jets_eta: {jets_eta}")
+            print(f"jets_phi: {jets_phi}")
+
+            # raise Exception("Done")
+
 
             # get the 4-vector of predicted jets
-            jets_mass = jets_mass.to(permuted_jet_pred.device)
+            jets_mass = jets_mass.to(permuted_jet_pred.device) # move data to same device (cpu or gpu)
             jets_pt = jets_pt.to(permuted_jet_pred.device)
             jets_eta = jets_eta.to(permuted_jet_pred.device)
             jets_phi = jets_phi.to(permuted_jet_pred.device)
@@ -145,7 +155,12 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             jets_eta_pred = torch.gather(jets_eta, 2, permuted_jet_pred)
             jets_phi_pred = torch.gather(jets_phi, 2, permuted_jet_pred)
 
-            # print(f"jet mass pred: {jets_mass_pred}")
+            print(f"permutation: {permuted_jet_pred}")
+            print(f"jet mass pred: {jets_mass_pred}")
+            print(f"jet pt pred: {jets_pt_pred}")
+            print(f"jet eta pred: {jets_eta_pred}")
+            print(f"jet phi pred: {jets_phi_pred}")
+            raise Exception("Done")
 
             # reconstruct four-momentum of jets
             jets_energy = torch.sqrt(jets_mass_pred**2 + jets_pt_pred**2 * torch.cosh(jets_eta_pred)**2)
@@ -165,8 +180,10 @@ class JetReconstructionValidation(JetReconstructionNetwork):
 
             # resonance_mass^2 = E^2 = p^2
             resonance_mass = torch.sqrt(resonance_energy**2 - resonance_px**2 - resonance_py**2 - resonance_pz**2) # (num_targets, num_events)
-            # print(f"t1 mass: {resonance_mass[0]}") 
-            # print(f"t2 mass: {resonance_mass[1]}") 
+            print(f"t1 mass: {resonance_mass[0]}") 
+            print(f"t2 mass: {resonance_mass[1]}") 
+
+            # raise Exception("Done")
 
 
         # raise Exception("done") 
