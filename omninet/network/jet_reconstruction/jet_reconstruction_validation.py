@@ -111,14 +111,14 @@ class JetReconstructionValidation(JetReconstructionNetwork):
 
         # compute mass plots using jet_pred_permuted and sources
         if sources is not None:
-            print(f"sources: {sources}")
-            print(f"sources len: {len(sources)}") # SEQUENTIAL data and GLOBAL data
+            # print(f"sources: {sources}")
+            # print(f"sources len: {len(sources)}") # SEQUENTIAL data and GLOBAL data
             # check sequential data!!!
             source_data = sources[0][0] 
             source_mask = sources[0][1]
             # print(f"data: {source_data}") 
             # print(f"mask: {source_mask}") 
-            # masked_data = source_data[source_mask]
+            masked_data = source_data[source_mask]
             # print(f"masked data: {masked_data}") # should i use the masked data?
 
             # print(f"sources[0][0] : {sources[0][0]}") #[evt, jets, feats]
@@ -132,21 +132,32 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             # print(f"normalizer: {normalizer}")
             # print(f"normalizer[0]: {normalizer[0]}")
             # print(f"normalizer[1]: {normalizer[1]}")
-            print(f"source after norm: {source_data}")
+            # print(f"source after norm: {source_data}")
             source_denorm = normalizer[0].denormalize(source_data, source_mask)
-            print(f"source before norm: {source_denorm}")
-            print(f"normalizer mean: {normalizer[0].mean}")
-            print(f"normalizer std: {normalizer[0].std}")
+            # print(f"source before norm: {source_denorm}")
+            # print(f"normalizer mean: {normalizer[0].mean}")
+            # print(f"normalizer std: {normalizer[0].std}")
+
 
             # get 4-vector of all jets
-            jets_mass = source_denorm[:,:,0].expand(num_targets, -1, -1)
-            jets_pt = source_denorm[:,:,1].expand(num_targets, -1, -1)
+            jets_mass = torch.exp(source_denorm[:,:,0]).expand(num_targets, -1, -1)
+            jets_pt = torch.exp(source_denorm[:,:,1]).expand(num_targets, -1, -1)
+            jets_mass = torch.round(jets_mass)
+            jets_pt = torch.round(jets_pt)
+            # jets_mass = source_denorm[:,:,0].expand(num_targets, -1, -1)
+            # jets_pt = source_denorm[:,:,1].expand(num_targets, -1, -1)
             jets_eta = source_denorm[:,:,2].expand(num_targets, -1, -1)
             jets_phi = source_denorm[:,:,3].expand(num_targets, -1, -1)
             # print(f"jet mass: {jets_mass}")
             # print(f"jets_pt: {jets_pt}")
             # print(f"jets_eta: {jets_eta}")
             # print(f"jets_phi: {jets_phi}")
+
+            # mass_greater_than_20 = (jets_mass > 20).any()
+            # pt_greater_than_20 = (jets_pt > 20).any()
+
+            # print(f"mass > 10: {mass_greater_than_20}")
+            # print(f"pt > 10: {pt_greater_than_20}")
 
             # raise Exception("Done")
 
@@ -186,8 +197,8 @@ class JetReconstructionValidation(JetReconstructionNetwork):
 
             # resonance_mass^2 = E^2 - p^2
             resonance_mass = torch.sqrt(resonance_energy**2 - resonance_px**2 - resonance_py**2 - resonance_pz**2) # (num_targets, num_events)
-            print(f"t1 mass: {resonance_mass[0]}") 
-            print(f"t2 mass: {resonance_mass[1]}") 
+            # print(f"t1 mass: {resonance_mass[0]}") 
+            # print(f"t2 mass: {resonance_mass[1]}") 
 
             # raise Exception("Done")
 
@@ -295,14 +306,21 @@ class JetReconstructionValidation(JetReconstructionNetwork):
 
         for name, value in metrics.items():
             if isinstance(value, torch.Tensor): 
+
+                # flatten and convert tensor to numpy
+                flat_data = value.cpu().numpy().flatten()
+                nan_mask = np.isnan(flat_data)
+                if nan_mask.any():
+                    flat_data[nan_mask] = np.nanmean(flat_data)
+
                 # print("a tensor!")
                 # print(f"{name}: {value}")
                 self.log(f"{name}_mean", value.mean().item(), sync_dist=True)
                 self.log(f"{name}_std", value.std().item(), sync_dist=True)
 
                 if self.trainer.is_global_zero and self.current_epoch % 10 == 1: # plot mass hist every 10 epochs
-                    # flatten and convert tensor to numpy
-                    flat_data = value.cpu().numpy().flatten()
+
+                    # print(f"flat data: {flat_data}")
 
                     # plot the histogram as an image
                     plt.figure()
@@ -310,6 +328,7 @@ class JetReconstructionValidation(JetReconstructionNetwork):
                     plt.title(name)
                     plt.xlabel("Mass")
                     plt.ylabel("Counts")
+                    plt.close()
 
                     # save the plot to W&B as an image
                     self.logger.experiment.log({name: wandb.Image(plt)}, commit=False)
