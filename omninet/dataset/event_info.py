@@ -54,6 +54,7 @@ class EventInfo:
     ):
 
         self.input_types = input_types
+        # print(f"input_type: {input_types}")
         self.input_names = list(input_types.keys())
         self.input_features = input_features
 

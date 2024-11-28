@@ -74,7 +74,8 @@ class JetReconstructionValidation(JetReconstructionNetwork):
                 # print(f"jet_accuracies[i, j]: {jet_accuracies[i, j]}")
             particle_accuracies[i] = stacked_masks[permutation] == particle_predictions
 
-        
+        # print(f"jet_predictions: {jet_predictions}")
+        # raise Exception("done")
 
 
         jet_accuracies = jet_accuracies.sum(1)
@@ -110,9 +111,10 @@ class JetReconstructionValidation(JetReconstructionNetwork):
 
         # compute mass plots using jet_pred_permuted and sources
         if sources is not None:
-            print(f"sources: {type(sources[0])}")
-            # print(f"sources len: {len(sources)}") # SEQUENTIAL data and GLOBAL data
-            source_data = sources[0][0]
+            print(f"sources: {sources}")
+            print(f"sources len: {len(sources)}") # SEQUENTIAL data and GLOBAL data
+            # check sequential data!!!
+            source_data = sources[0][0] 
             source_mask = sources[0][1]
             # print(f"data: {source_data}") 
             # print(f"mask: {source_mask}") 
@@ -126,21 +128,25 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             # print(f"source phi: {sources[0][0][:,:,3]}") 
 
             # denormalize the source data
-            num_vec_normalizer = self.num_vector_normalizer
-            # print(f"num_vec_normalizer: {num_vec_normalizer}")
-            # print(f"source after norm: {source_data}")
-            source_denorm = num_vec_normalizer[0].denormalize(source_data, source_mask)
-            # print(f"source before norm: {source_denorm}")
+            normalizer = self.normalizer
+            # print(f"normalizer: {normalizer}")
+            # print(f"normalizer[0]: {normalizer[0]}")
+            # print(f"normalizer[1]: {normalizer[1]}")
+            print(f"source after norm: {source_data}")
+            source_denorm = normalizer[0].denormalize(source_data, source_mask)
+            print(f"source before norm: {source_denorm}")
+            print(f"normalizer mean: {normalizer[0].mean}")
+            print(f"normalizer std: {normalizer[0].std}")
 
             # get 4-vector of all jets
             jets_mass = source_denorm[:,:,0].expand(num_targets, -1, -1)
             jets_pt = source_denorm[:,:,1].expand(num_targets, -1, -1)
             jets_eta = source_denorm[:,:,2].expand(num_targets, -1, -1)
             jets_phi = source_denorm[:,:,3].expand(num_targets, -1, -1)
-            print(f"jet mass: {jets_mass}")
-            print(f"jets_pt: {jets_pt}")
-            print(f"jets_eta: {jets_eta}")
-            print(f"jets_phi: {jets_phi}")
+            # print(f"jet mass: {jets_mass}")
+            # print(f"jets_pt: {jets_pt}")
+            # print(f"jets_eta: {jets_eta}")
+            # print(f"jets_phi: {jets_phi}")
 
             # raise Exception("Done")
 
@@ -150,17 +156,17 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             jets_pt = jets_pt.to(permuted_jet_pred.device)
             jets_eta = jets_eta.to(permuted_jet_pred.device)
             jets_phi = jets_phi.to(permuted_jet_pred.device)
-            jets_mass_pred = torch.gather(jets_mass, 2, permuted_jet_pred)
+            jets_mass_pred = torch.gather(jets_mass, 2, permuted_jet_pred) # permute jet_feats according to permuted_jet_pred
             jets_pt_pred = torch.gather(jets_pt, 2, permuted_jet_pred)
             jets_eta_pred = torch.gather(jets_eta, 2, permuted_jet_pred)
             jets_phi_pred = torch.gather(jets_phi, 2, permuted_jet_pred)
 
-            print(f"permutation: {permuted_jet_pred}")
-            print(f"jet mass pred: {jets_mass_pred}")
-            print(f"jet pt pred: {jets_pt_pred}")
-            print(f"jet eta pred: {jets_eta_pred}")
-            print(f"jet phi pred: {jets_phi_pred}")
-            raise Exception("Done")
+            # print(f"permutation: {permuted_jet_pred}")
+            # print(f"jet mass pred: {jets_mass_pred}")
+            # print(f"jet pt pred: {jets_pt_pred}")
+            # print(f"jet eta pred: {jets_eta_pred}")
+            # print(f"jet phi pred: {jets_phi_pred}")
+            # raise Exception("Done")
 
             # reconstruct four-momentum of jets
             jets_energy = torch.sqrt(jets_mass_pred**2 + jets_pt_pred**2 * torch.cosh(jets_eta_pred)**2)
@@ -178,7 +184,7 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             resonance_py = resonance_four_momentum[..., 2]
             resonance_pz = resonance_four_momentum[..., 3]
 
-            # resonance_mass^2 = E^2 = p^2
+            # resonance_mass^2 = E^2 - p^2
             resonance_mass = torch.sqrt(resonance_energy**2 - resonance_px**2 - resonance_py**2 - resonance_pz**2) # (num_targets, num_events)
             print(f"t1 mass: {resonance_mass[0]}") 
             print(f"t2 mass: {resonance_mass[1]}") 
@@ -294,7 +300,7 @@ class JetReconstructionValidation(JetReconstructionNetwork):
                 self.log(f"{name}_mean", value.mean().item(), sync_dist=True)
                 self.log(f"{name}_std", value.std().item(), sync_dist=True)
 
-                if self.current_epoch % 10 == 1: # plot mass hist every 10 epochs
+                if self.trainer.is_global_zero and self.current_epoch % 10 == 1: # plot mass hist every 10 epochs
                     # flatten and convert tensor to numpy
                     flat_data = value.cpu().numpy().flatten()
 
@@ -308,7 +314,7 @@ class JetReconstructionValidation(JetReconstructionNetwork):
                     # save the plot to W&B as an image
                     self.logger.experiment.log({name: wandb.Image(plt)}, commit=False)
 
-                
+            # log the scalar values
             elif not np.isnan(value):
                 self.log(name, value, sync_dist=True)
 
