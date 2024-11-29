@@ -11,12 +11,14 @@ from omninet.dataset.evaluator import SymmetricEvaluator
 from omninet.network.jet_reconstruction.jet_reconstruction_network import JetReconstructionNetwork
 import wandb
 import matplotlib.pyplot as plt
-
+import vector
+import awkward as ak
 
 class JetReconstructionValidation(JetReconstructionNetwork):
     def __init__(self, options: Options, torch_script: bool = False):
         super(JetReconstructionValidation, self).__init__(options, torch_script)
         self.evaluator = SymmetricEvaluator(self.training_dataset.event_info)
+        self.reco_mass_list = []
 
     @property
     def particle_metrics(self) -> Dict[str, Callable[[np.ndarray, np.ndarray], float]]:
@@ -56,7 +58,6 @@ class JetReconstructionValidation(JetReconstructionNetwork):
         # print(stacked_masks)
 
         # print(f"particle predictions: {particle_predictions}") # 
-
 
 
 
@@ -127,6 +128,11 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             # print(f"source eta: {sources[0][0][:,:,2]}")
             # print(f"source phi: {sources[0][0][:,:,3]}") 
 
+            if torch.isnan(source_data).any():
+                print(f"nan in source_data: {source_data}")
+                raise Exception("Done")
+
+
             # denormalize the source data
             normalizer = self.normalizer
             # print(f"normalizer: {normalizer}")
@@ -137,6 +143,11 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             # print(f"source before norm: {source_denorm}")
             # print(f"normalizer mean: {normalizer[0].mean}")
             # print(f"normalizer std: {normalizer[0].std}")
+            # source_denorm = source_denorm[source_mask]
+
+            if torch.isnan(source_denorm).any():
+                print(f"nan in source_denorm: {source_denorm}")
+                raise Exception("Done")
 
 
             # get 4-vector of all jets
@@ -152,6 +163,13 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             # print(f"jets_pt: {jets_pt}")
             # print(f"jets_eta: {jets_eta}")
             # print(f"jets_phi: {jets_phi}")
+
+            if torch.isnan(jets_mass).any():
+                print(f"nan in jets_mass: {jets_mass}")
+                raise Exception("Done")
+            if torch.isnan(jets_pt).any():
+                print(f"nan in jets_pt: {jets_pt}")
+                raise Exception("Done")
 
             # mass_greater_than_20 = (jets_mass > 20).any()
             # pt_greater_than_20 = (jets_pt > 20).any()
@@ -172,21 +190,24 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             jets_eta_pred = torch.gather(jets_eta, 2, permuted_jet_pred)
             jets_phi_pred = torch.gather(jets_phi, 2, permuted_jet_pred)
 
-            # print(f"permutation: {permuted_jet_pred}")
-            # print(f"jet mass pred: {jets_mass_pred}")
-            # print(f"jet pt pred: {jets_pt_pred}")
-            # print(f"jet eta pred: {jets_eta_pred}")
-            # print(f"jet phi pred: {jets_phi_pred}")
-            # raise Exception("Done")
+            # # print(f"permutation: {permuted_jet_pred}")
+            # # print(f"jet mass pred: {jets_mass_pred}")
+            # # print(f"jet pt pred: {jets_pt_pred}")
+            # # print(f"jet eta pred: {jets_eta_pred}")
+            # # print(f"jet phi pred: {jets_phi_pred}")
+            # # raise Exception("Done")
 
             # reconstruct four-momentum of jets
-            jets_energy = torch.sqrt(jets_mass_pred**2 + jets_pt_pred**2 * torch.cosh(jets_eta_pred)**2)
             jets_px = jets_pt_pred * torch.cos(jets_phi_pred)
             jets_py = jets_pt_pred * torch.sin(jets_phi_pred)
             jets_pz = jets_pt_pred * torch.sinh(jets_eta_pred)
+            jets_energy = torch.sqrt(jets_mass_pred**2 + jets_px**2 + jets_py**2 + jets_pz**2)
             jets_four_momentum = torch.stack( (jets_energy, jets_px, jets_py, jets_pz), dim=-1) # (num_targets, num_events, num_jets, 4)
 
-            # print(f"jets_four_momentum: {jets_four_momentum}") 
+            # print(f"jets_four_momentum: {jets_four_momentum}")
+            if torch.isnan(jets_four_momentum).any():
+                print(f"nan in jets_four_momentum: {jets_four_momentum}")
+                raise Exception("Done") 
             
             # reconstruct four-momentum of resonance
             resonance_four_momentum = jets_four_momentum.sum(dim=2) # (num_targets, num_events, 1, 4)
@@ -196,11 +217,14 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             resonance_pz = resonance_four_momentum[..., 3]
 
             # resonance_mass^2 = E^2 - p^2
-            resonance_mass = torch.sqrt(resonance_energy**2 - resonance_px**2 - resonance_py**2 - resonance_pz**2) # (num_targets, num_events)
+            resonance_mass = torch.sqrt(torch.clamp(resonance_energy**2 - resonance_px**2 - resonance_py**2 - resonance_pz**2, min=0))
+            # resonance_mass = torch.sqrt(resonance_energy**2 - resonance_px**2 - resonance_py**2 - resonance_pz**2) # (num_targets, num_events)
             # print(f"t1 mass: {resonance_mass[0]}") 
             # print(f"t2 mass: {resonance_mass[1]}") 
+            if torch.isnan(resonance_mass).any():
+                print(f"nan in resonance_mass: {resonance_mass}")
+                raise Exception("Done")
 
-            # raise Exception("Done")
 
 
         # raise Exception("done") 
@@ -244,6 +268,10 @@ class JetReconstructionValidation(JetReconstructionNetwork):
 
         return metrics
 
+    def on_validation_epoch_start(self):
+        # declare dict to accumlate mass from all validation step
+        self.aggregated_metrics = {}
+    
     def validation_step(self, batch, batch_idx) -> Dict[str, np.float32]:
         # Run the base prediction step
         sources, num_jets, targets, regression_targets, classification_targets, num_seq_jets = batch
@@ -298,14 +326,28 @@ class JetReconstructionValidation(JetReconstructionNetwork):
             #self.logger.experiment.log(f"REGRESSION/{key}_percent_deviation", percent_deviation)
 
             absolute_deviation = delta
-#            self.logger.experiment.add_histogram(f"REGRESSION/{key}_absolute_deviation", absolute_deviation, self.global_step)
+            # self.logger.experiment.add_histogram(f"REGRESSION/{key}_absolute_deviation", absolute_deviation, self.global_step)
 
         for key in classifications:
             accuracy = (classifications[key] == classification_targets[key])
             self.log(f"CLASSIFICATION/{key}_accuracy", accuracy.mean(), sync_dist=True)
 
+        # print(f"metrics: {list(metrics.keys())}")
         for name, value in metrics.items():
-            if isinstance(value, torch.Tensor): 
+            # if the data is tensor (like resonance mass data)
+            if isinstance(value, torch.Tensor):
+
+                # flatten and convert tensor to numpy
+                flat_data = value.cpu().numpy().flatten()
+                nan_mask = np.isnan(flat_data)
+                if nan_mask.any():
+                    flat_data[nan_mask] = np.nanmean(flat_data) 
+
+                # log the mean and std of mass
+                # print("a tensor!")
+                # print(f"{name}: {value}")
+                self.log(f"{name}_mean", np.nanmean(flat_data), sync_dist=True)
+                self.log(f"{name}_std", np.nanstd(flat_data), sync_dist=True)
 
                 # flatten and convert tensor to numpy
                 flat_data = value.cpu().numpy().flatten()
@@ -313,31 +355,38 @@ class JetReconstructionValidation(JetReconstructionNetwork):
                 if nan_mask.any():
                     flat_data[nan_mask] = np.nanmean(flat_data)
 
-                # print("a tensor!")
-                # print(f"{name}: {value}")
-                self.log(f"{name}_mean", value.mean().item(), sync_dist=True)
-                self.log(f"{name}_std", value.std().item(), sync_dist=True)
+                # accumulate data for plotting
+                if name not in self.aggregated_metrics:
+                    self.aggregated_metrics[name] = []
+                self.aggregated_metrics[name].extend(flat_data)
 
-                if self.trainer.is_global_zero and self.current_epoch % 10 == 1: # plot mass hist every 10 epochs
-
-                    # print(f"flat data: {flat_data}")
-
-                    # plot the histogram as an image
-                    plt.figure()
-                    plt.hist(flat_data, bins=50, range=(flat_data.min(), flat_data.max()))
-                    plt.title(name)
-                    plt.xlabel("Mass")
-                    plt.ylabel("Counts")
-                    plt.close()
-
-                    # save the plot to W&B as an image
-                    self.logger.experiment.log({name: wandb.Image(plt)}, commit=False)
 
             # log the scalar values
             elif not np.isnan(value):
                 self.log(name, value, sync_dist=True)
 
         return metrics
+
+    def on_validation_epoch_end(self):
+        if self.trainer.is_global_zero and self.current_epoch % 5 == 0:  # plot every 10 epochs
+            for name, data in self.aggregated_metrics.items():
+                # Convert to numpy array for processing
+                aggregated_data = np.array(data)
+                
+                # Plot the aggregated data
+                plt.figure()
+                plt.hist(aggregated_data, bins=50, range=(0, 5000))
+                plt.title(name)
+                plt.xlabel("Mass")
+                plt.ylabel("Counts")
+                
+                # Save the plot to W&B
+                self.logger.experiment.log({f"{name}_aggregated": wandb.Image(plt)}, commit=False)
+                plt.close()
+        
+        # Clear metrics for the next epoch
+        self.aggregated_metrics = {}
+
 
     def test_step(self, batch, batch_idx):
         return self.validation_step(batch, batch_idx)
