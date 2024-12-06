@@ -225,7 +225,7 @@ def main(
         log_every_n_steps=1
     )
 
-    print("Trainer setup done")
+    # print("Trainer setup done")
 
     # Save the current hyperparameters to a json file in the checkpoint directory
     if master:

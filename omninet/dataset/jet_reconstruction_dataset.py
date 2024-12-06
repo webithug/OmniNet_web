@@ -104,6 +104,16 @@ class JetReconstructionDataset(Dataset):
             # for input_name in self.event_info.input_names:
             #     print(f"input_name: {input_name}")
 
+            # def create_source_with_debug(event_info, file, input_name, num_events, limit_index):
+            #     print(f"File for {input_name}: {file}")
+            #     print(f"event_info for {input_name}: {event_info}")
+            #     return create_source_input(event_info, file, input_name, num_events, limit_index)
+
+            # self.sources = OrderedDict((
+            #     (input_name, create_source_with_debug(self.event_info, file, input_name, self.num_events, limit_index))
+            #     for input_name in self.event_info.input_names
+            # ))
+
             # Compute the jet offsets for different input sources if we are reconstructing more than one type of object.
             self.source_offsets = torch.tensor([
                 dataset.max_vectors()

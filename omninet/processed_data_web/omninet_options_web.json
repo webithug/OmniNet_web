@@ -39,8 +39,8 @@
 
     "skip_connections": true,
     "initial_embedding_skip_connections": true,
-    "event_info_file": "/global/homes/w/weipow/OmniNet_web/event_files/WZ_1L.yaml",
-    "training_file": "/global/cfs/cdirs/m2616/tihsu/Event_Level_Analysis/OmniNet_input_v2/merge_VV_singleProcess/merged_run/WZ_1L.h5",
+    "event_info_file": "/global/homes/w/weipow/OmniNet_web/event_files/full_hadronic_ttbar.yaml",
+    "training_file": "/global/cfs/cdirs/m2616/tihsu/Event_Level_Analysis/OmniNet_input/train/run_0/TTHadronics.h5",
 
     "normalize_features": true,
     "limit_to_num_jets": 0,
@@ -51,7 +51,7 @@
 
     "dataset_limit": 1.0,
     "train_validation_split": 0.95,
-    "batch_size": 1024,
+    "batch_size": 64,
     "num_dataloader_workers": 16,
 
     "mask_sequence_vectors": true,
